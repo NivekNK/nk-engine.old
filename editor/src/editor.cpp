@@ -1,8 +1,9 @@
-#include "test.h"
-
 int main(void) {
-    while (true) {
-        nk::Print();
-    }
+    TraceLog("Hello from main!");
+    DebugLog("Hello from main!");
+    InfoLog("Hello from main!");
+    WarnLog("Hello from main!");
+    ErrorLog("Hello from main!");
+    FatalLog("Hello from main!");
     return 0;
 }
