@@ -24,6 +24,9 @@ namespace nk {
         template <typename T>
         inline T* allocate() { return static_cast<T*>(allocate(sizeof(T), 1)); }
 
+        template <typename T>
+        inline T* allocate(const szt size) { return static_cast<T*>(allocate(size, 1)); }
+
     protected:
         inline szt memory_align(const szt size, const szt alignment) {
             const szt alignment_mask = alignment - 1;

@@ -21,7 +21,11 @@ target_precompile_headers(${PROJECT_NAME} PUBLIC include/nkpch.h)
 
 #================== Source files ==================
 set(SOURCES
+    src/core/bit.cpp
+
     src/system/logging.cpp
+    src/system/memory.cpp
+
     src/memory/heap_allocator.cpp
     src/memory/stack_allocator.cpp
     src/memory/double_stack_allocator.cpp
@@ -41,6 +45,7 @@ target_include_directories(${PROJECT_NAME}
 PRIVATE
     # where the library itself will look for its internal headers
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/internal
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tlsf/include
 PUBLIC
     # where top-level project will look for the library's public headers

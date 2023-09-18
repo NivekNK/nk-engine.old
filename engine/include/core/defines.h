@@ -18,13 +18,13 @@ namespace nk {
     using str = std::string;
     using cstr = const char*;
 
-    static constexpr u8 u8_max = UINT8_MAX;
-    static constexpr u16 u16_max = UINT16_MAX;
-    static constexpr u32 u32_max = UINT32_MAX;
-    static constexpr u64 u64_max = UINT64_MAX;
+    static constexpr const u8 u8_max = UINT8_MAX;
+    static constexpr const u16 u16_max = UINT16_MAX;
+    static constexpr const u32 u32_max = UINT32_MAX;
+    static constexpr const u64 u64_max = UINT64_MAX;
 
-    static constexpr i8 i8_max = INT8_MAX;
-    static constexpr i16 i16_max = INT16_MAX;
-    static constexpr i32 i32_max = INT32_MAX;
-    static constexpr i64 i64_max = INT64_MAX;
+    static constexpr const i8 i8_max = INT8_MAX;
+    static constexpr const i16 i16_max = INT16_MAX;
+    static constexpr const i32 i32_max = INT32_MAX;
+    static constexpr const i64 i64_max = INT64_MAX;
 }
