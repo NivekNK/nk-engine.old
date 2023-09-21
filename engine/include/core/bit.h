@@ -27,7 +27,7 @@ namespace nk {
         }
 
         explicit operator bool() const { return m_mask != 0; }
-        int operator*() const { return LowestBitSet(); }
+        int operator*() const { return lowest_bit_set(); }
 
         uint32_t lowest_bit_set() const {
             return trailing_zeros_u32(m_mask) >> Shift;

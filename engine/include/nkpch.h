@@ -26,6 +26,9 @@
 
 // Memory manipulation
 #include <memory>
+#include <optional>
+#include <functional>
+#include <concepts>
 
 // Global engine files
 #include "core/defines.h"

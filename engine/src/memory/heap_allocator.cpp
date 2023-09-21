@@ -24,7 +24,7 @@ namespace nk {
     }
 
     HeapAllocator::~HeapAllocator() {
-        MemoryStats stats{0, m_max_size};
+        MemoryStats stats{m_name, "HeapAllocator", 0, m_max_size};
         pool_t pool = tlsf_get_pool(m_tlsf_handle);
         tlsf_walk_pool(pool, exit_walker, static_cast<void*>(&stats));
 

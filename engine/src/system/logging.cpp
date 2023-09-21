@@ -7,12 +7,6 @@
 #endif
 
 namespace nk {
-    LoggingSystem LoggingSystem::s_system;
-
-    LoggingSystem* LoggingSystem::get() {
-        return &s_system;
-    }
-
 #if defined(NK_PLATFORM_WINDOWS)
     void LoggingSystem::activate_virtual_terminal() {
         HANDLE handleOut = GetStdHandle(STD_OUTPUT_HANDLE);

@@ -29,7 +29,7 @@
 namespace nk {
     class LoggingSystem : public System {
     public:
-        static LoggingSystem* get();
+        NK_SYSTEM_INSTANCE(LoggingSystem)
         ~LoggingSystem() = default;
 
         enum Priority {
@@ -86,57 +86,55 @@ namespace nk {
             {1, -1, 1},
             {-1, 1, 1},
         };
-
-        static LoggingSystem s_system;
     };
 }
 
 #if NK_LOG_TRACE_ENABLED == 1
-    #define TraceLog(...) ::nk::LoggingSystem::get()->Trace(__FILE__, __LINE__, __VA_ARGS__)
+    #define TraceLog(...) ::nk::LoggingSystem::get().Trace(__FILE__, __LINE__, __VA_ARGS__)
     #define TraceIfLog(value, ...) \
         if (value)                 \
-        ::nk::LoggingSystem::get()->Trace(__FILE__, __LINE__, __VA_ARGS__)
+        ::nk::LoggingSystem::get().Trace(__FILE__, __LINE__, __VA_ARGS__)
 #else
     #define TraceLog(...)
     #define TraceIfLog(value, ...)
 #endif
 
 #if NK_LOG_DEBUG_ENABLED == 1
-    #define DebugLog(...) ::nk::LoggingSystem::get()->Debug(__FILE__, __LINE__, __VA_ARGS__)
+    #define DebugLog(...) ::nk::LoggingSystem::get().Debug(__FILE__, __LINE__, __VA_ARGS__)
     #define DebugIfLog(value, ...) \
         if (value)                 \
-        ::nk::LoggingSystem::get()->Debug(__FILE__, __LINE__, __VA_ARGS__)
+        ::nk::LoggingSystem::get().Debug(__FILE__, __LINE__, __VA_ARGS__)
 #else
     #define DebugLog(...)
     #define DebugIfLog(value, ...)
 #endif
 
 #if NK_LOG_INFO_ENABLED == 1
-    #define InfoLog(...) ::nk::LoggingSystem::get()->Info(__FILE__, __LINE__, __VA_ARGS__)
+    #define InfoLog(...) ::nk::LoggingSystem::get().Info(__FILE__, __LINE__, __VA_ARGS__)
     #define InfoIfLog(value, ...) \
         if (value)                \
-        ::nk::LoggingSystem::get()->Info(__FILE__, __LINE__, __VA_ARGS__)
+        ::nk::LoggingSystem::get().Info(__FILE__, __LINE__, __VA_ARGS__)
 #else
     #define InfoLog(...)
     #define InfoIfLog(value, ...)
 #endif
 
 #if NK_LOG_WARN_ENABLED == 1
-    #define WarnLog(...) ::nk::LoggingSystem::get()->Warn(__FILE__, __LINE__, __VA_ARGS__)
+    #define WarnLog(...) ::nk::LoggingSystem::get().Warn(__FILE__, __LINE__, __VA_ARGS__)
     #define WarnIfLog(value, ...) \
         if (value)                \
-        ::nk::LoggingSystem::get()->Warn(__FILE__, __LINE__, __VA_ARGS__)
+        ::nk::LoggingSystem::get().Warn(__FILE__, __LINE__, __VA_ARGS__)
 #else
     #define WarnLog(...)
     #define WarnIfLog(value, ...)
 #endif
 
-#define ErrorLog(...) ::nk::LoggingSystem::get()->Error(__FILE__, __LINE__, __VA_ARGS__)
+#define ErrorLog(...) ::nk::LoggingSystem::get().Error(__FILE__, __LINE__, __VA_ARGS__)
 #define ErrorIfLog(...) \
     if (value)          \
-    ::nk::LoggingSystem::get()->Error(__FILE__, __LINE__, __VA_ARGS__)
+    ::nk::LoggingSystem::get().Error(__FILE__, __LINE__, __VA_ARGS__)
 
-#define FatalLog(...) ::nk::LoggingSystem::get()->Fatal(__FILE__, __LINE__, __VA_ARGS__)
+#define FatalLog(...) ::nk::LoggingSystem::get().Fatal(__FILE__, __LINE__, __VA_ARGS__)
 #define FatalIfLog(...) \
     if (value)          \
-    ::nk::LoggingSystem::get()->Fatal(__FILE__, __LINE__, __VA_ARGS__)
+    ::nk::LoggingSystem::get().Fatal(__FILE__, __LINE__, __VA_ARGS__)

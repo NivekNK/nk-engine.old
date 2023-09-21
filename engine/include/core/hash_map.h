@@ -36,19 +36,19 @@ namespace nk {
         bool remove(const K& key);
         bool remove(const Iterator& it);
 
-        V& get(const K& key);
-        V& get(const Iterator& it);
+        using OptRefValue = std::optional<std::reference_wrapper<V>>;
+        OptRefValue get(const K& key);
+        OptRefValue get(const Iterator& it);
 
-        KeyValue& get_key_value(const K& key);
-        KeyValue& get_key_value(const Iterator& it);
-
-        HashMap& set_default_value(const V& value);
+        using OptRefKeyValue = std::optional<std::reference_wrapper<KeyValue>>;
+        OptRefKeyValue get_key_value(const K& key);
+        OptRefKeyValue get_key_value(const Iterator& it);
 
         Iterator it_begin();
         void it_advance(Iterator& it);
 
         void clear();
-        void reverse(u64 new_size);
+        void reserve(u64 new_size);
 
     private:
         void erase_meta(const Iterator& it);
@@ -82,7 +82,6 @@ namespace nk {
         u64 m_growth_left = 0;
 
         Allocator* m_allocator = nullptr;
-        KeyValue m_default_key_value = {(K)-1, 0};
     };
 
     namespace detail {
@@ -224,7 +223,17 @@ namespace nk {
         };
 
         static bool capacity_is_valid(size_t n) { return ((n + 1) & n) == 0 && n > 0; }
-        static u64 capacity_normalize(u64 n) { return n ? ~u64{} >> __builtin_clzl(n) : 1; }
+        static u64 lzcnt_soft(u64 n) {
+#if defined(NK_PLATFORM_WINDOWS)
+            unsigned long index = 0;
+            _BitScanReverse64(&index, n);
+            u64 cnt = index ^ 63;
+#else
+            u64 cnt = __builtin_clzl(n);
+#endif
+            return cnt;
+        }
+        static u64 capacity_normalize(u64 n) { return n ? ~u64{} >> lzcnt_soft(n) : 1; }
         static u64 capacity_to_growth(u64 capacity) { return capacity - capacity / 8; }
         static u64 capacity_growth_to_lower_bound(u64 growth) { return growth + static_cast<u64>((static_cast<i64>(growth) - 1) / 7); }
 
@@ -244,7 +253,6 @@ namespace nk {
           m_size{0},
           m_capacity{0},
           m_growth_left{0},
-          m_default_key_value{static_cast<K>(-1), static_cast<V>(0)},
           m_control_bytes{detail::group_init_empty()},
           m_slots{nullptr} {
         reserve(initial_capacity < 4 ? 4 : initial_capacity);
@@ -311,43 +319,37 @@ namespace nk {
     }
 
     template <typename K, typename V>
-    V& HashMap<K, V>::get(const K& key) {
+    HashMap<K, V>::OptRefValue HashMap<K, V>::get(const K& key) {
         auto it = find(key);
         if (it.index != iterator_end)
-            return m_slots[it.index].value;
+            return std::ref(m_slots[it.index].value);
 
-        return m_default_key_value.value;
+        return std::nullopt;
     }
 
     template <typename K, typename V>
-    V& HashMap<K, V>::get(const Iterator& it) {
+    HashMap<K, V>::OptRefValue HashMap<K, V>::get(const Iterator& it) {
         if (it.index != iterator_end)
-            return m_slots[it.index].value;
+            return std::ref(m_slots[it.index].value);
 
-        return m_default_key_value.value;
+        return std::nullopt;
     }
 
     template <typename K, typename V>
-    HashMap<K, V>::KeyValue& HashMap<K, V>::get_key_value(const K& key) {
+    HashMap<K, V>::OptRefKeyValue HashMap<K, V>::get_key_value(const K& key) {
         auto it = find(key);
         if (it.index != iterator_end)
-            return m_slots[it.index];
+            return std::ref(m_slots[it.index]);
 
-        return m_default_key_value;
+        return std::nullopt;
     }
 
     template <typename K, typename V>
-    HashMap<K, V>::KeyValue& HashMap<K, V>::get_key_value(const Iterator& it) {
+    HashMap<K, V>::OptRefKeyValue HashMap<K, V>::get_key_value(const Iterator& it) {
         if (it.index != iterator_end)
-            return m_slots[it.index];
+            return std::ref(m_slots[it.index]);
 
-        return m_default_key_value;
-    }
-
-    template <typename K, typename V>
-    HashMap<K, V>& HashMap<K, V>::set_default_value(const V& value) {
-        m_default_key_value.value = value;
-        return *this;
+        return std::nullopt;
     }
 
     template <typename K, typename V>
@@ -371,12 +373,13 @@ namespace nk {
     }
 
     template <typename K, typename V>
-    void HashMap<K, V>::reverse(u64 new_size) {
+    void HashMap<K, V>::reserve(u64 new_size) {
         if (new_size <= m_size + m_growth_left)
             return;
 
         szt m = detail::capacity_growth_to_lower_bound(new_size);
-        resize(detail::capacity_normalize(m));
+        szt normalized = detail::capacity_normalize(m);
+        resize(normalized);
     }
 
     // Private HashMap
@@ -400,7 +403,7 @@ namespace nk {
 
     template <typename K, typename V>
     detail::FindResult HashMap<K, V>::find_or_prepare_insert(const K& key) {
-        u64 hash = hash_calculate(key);
+        u64 hash = detail::hash_calculate(key);
         detail::ProbeSequence sequence = probe(hash);
 
         while (true) {
@@ -452,7 +455,7 @@ namespace nk {
 
     template <typename K, typename V>
     detail::ProbeSequence HashMap<K, V>::probe(u64 hash) {
-        return detail::ProbeSequence { detail::hash_1(hash, m_control_bytes), m_capacity };
+        return detail::ProbeSequence{detail::hash_1(hash, m_control_bytes), m_capacity};
     }
 
     template <typename K, typename V>

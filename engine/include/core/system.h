@@ -6,3 +6,9 @@ namespace nk {
         System() = default;
     };
 }
+
+#define NK_SYSTEM_INSTANCE(Type) \
+    static Type& get() {         \
+        static Type instance;    \
+        return instance;         \
+    }
