@@ -10,6 +10,7 @@ namespace nk {
         struct FindResult;
         struct FindInfo;
         class ProbeSequence;
+        static i8* group_init_empty();
     }
 
     template <typename K, typename V>
@@ -74,7 +75,7 @@ namespace nk {
         void reset_ctrl();
         void reset_growth_left();
 
-        i8* m_control_bytes = group_init_empty();
+        i8* m_control_bytes = detail::group_init_empty();
         KeyValue* m_slots = nullptr;
 
         u64 m_size = 0;
@@ -130,12 +131,12 @@ namespace nk {
 
         template <szt N>
         inline u64 hash_calculate(const char (&value)[N], szt seed = 0) {
-            return wyhash(value, std::strlen(value), seed, _wyp);
+            return wyhash(value, strlen(value), seed, _wyp);
         }
 
         template <>
         inline u64 hash_calculate(const cstr& value, szt seed) {
-            return wyhash(value, std::strlen(value), seed, _wyp);
+            return wyhash(value, strlen(value), seed, _wyp);
         }
 
         inline u64 hash_bytes(void* data, szt length, szt seed = 0) {
@@ -152,7 +153,7 @@ namespace nk {
         static bool control_is_deleted(const i8 control) { return control == control_bitmask_deleted; }
         static bool control_is_empty_or_deleted(const i8 control) { return control < control_bitmask_sentinel; }
 
-        inline i8* group_init_empty() {
+        i8* group_init_empty() {
             alignas(16) static constexpr i8 empty_group[] = {
                 control_bitmask_sentinel,
                 control_bitmask_empty,
@@ -241,7 +242,7 @@ namespace nk {
             for (i8* pos = ctrl; pos != ctrl + capacity + 1; pos += GroupSse2Impl::width) {
                 GroupSse2Impl{pos}.convert_special_to_empty_and_full_to_deleted(pos);
             }
-            std::memcpy(ctrl + capacity + 1, ctrl, GroupSse2Impl::width);
+            memcpy(ctrl + capacity + 1, ctrl, GroupSse2Impl::width);
             ctrl[capacity] = control_bitmask_sentinel;
         }
     }
@@ -255,7 +256,9 @@ namespace nk {
           m_growth_left{0},
           m_control_bytes{detail::group_init_empty()},
           m_slots{nullptr} {
+        DebugLog("HashMap created!");
         reserve(initial_capacity < 4 ? 4 : initial_capacity);
+        DebugLog("HashMap memory reserverd!");
     }
 
     template <typename K, typename V>
@@ -376,10 +379,13 @@ namespace nk {
     void HashMap<K, V>::reserve(u64 new_size) {
         if (new_size <= m_size + m_growth_left)
             return;
-
+        DebugLog("Correct size");
         szt m = detail::capacity_growth_to_lower_bound(new_size);
+        DebugLog("Capacity growth");
         szt normalized = detail::capacity_normalize(m);
+        DebugLog("Capacity normalize");
         resize(normalized);
+        DebugLog("Resize");
     }
 
     // Private HashMap
@@ -495,15 +501,15 @@ namespace nk {
 
             if (detail::control_is_empty(m_control_bytes[new_i])) {
                 set_ctrl(new_i, detail::hash_2(hash));
-                std::memcpy(m_slots + new_i, m_slots + i, sizeof(KeyValue));
+                memcpy(m_slots + new_i, m_slots + i, sizeof(KeyValue));
                 set_ctrl(i, detail::control_bitmask_empty);
                 continue;
             }
 
             set_ctrl(new_i, detail::hash_2(hash));
-            std::memcpy(slot, m_slots + i, sizeof(KeyValue));
-            std::memcpy(m_slots + i, m_slots + new_i, sizeof(KeyValue));
-            std::memcpy(m_slots + new_i, slot, sizeof(KeyValue));
+            memcpy(slot, m_slots + i, sizeof(KeyValue));
+            memcpy(m_slots + i, m_slots + new_i, sizeof(KeyValue));
+            memcpy(m_slots + new_i, slot, sizeof(KeyValue));
             i--;
         }
     }
@@ -516,12 +522,16 @@ namespace nk {
     template <typename K, typename V>
     void HashMap<K, V>::initialize_slots() {
         char* new_memory = m_allocator->allocate<char>(calculate_size(m_capacity));
+        DebugLog("Allocated Memory");
 
         m_control_bytes = reinterpret_cast<i8*>(new_memory);
         m_slots = reinterpret_cast<KeyValue*>(new_memory + m_capacity + detail::GroupSse2Impl::width);
+        DebugLog("Reinterpreted Memory");
 
         reset_ctrl();
+        DebugLog("reset_ctrl");
         reset_growth_left();
+        DebugLog("reset_growth_left");
     }
 
     template <typename K, typename V>
@@ -532,7 +542,9 @@ namespace nk {
 
         m_capacity = new_capacity;
 
+        DebugLog("before initialize_slots");
         initialize_slots();
+        DebugLog("after initialize_slots");
 
         szt total_probe_length = 0;
         for (szt i = 0; i != old_capacity; i++) {
@@ -548,11 +560,13 @@ namespace nk {
             total_probe_length += find_info.probe_length;
 
             set_ctrl(new_i, detail::hash_2(hash));
-            std::memcpy(m_slots + new_i, old_slots + i, sizeof(KeyValue));
+            memcpy(m_slots + new_i, old_slots + i, sizeof(KeyValue));
+            DebugLog("Capacity cycle {}", i);
         }
 
-        if (old_capacity)
+        if (old_capacity != 0)
             m_allocator->free(old_control_bytes);
+        DebugLog("Endend resize");
     }
 
     template <typename K, typename V>
@@ -578,7 +592,7 @@ namespace nk {
 
     template <typename K, typename V>
     void HashMap<K, V>::reset_ctrl() {
-        std::memset(m_control_bytes, detail::control_bitmask_empty, m_capacity + detail::GroupSse2Impl::width);
+        memset(m_control_bytes, detail::control_bitmask_empty, m_capacity + detail::GroupSse2Impl::width);
         m_control_bytes[m_capacity] = detail::control_bitmask_sentinel;
     }
 

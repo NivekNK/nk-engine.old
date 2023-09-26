@@ -8,7 +8,7 @@ namespace nk {
         return __builtin_ctz(x);
     }
 
-    u32 leading_zeroes_u32(u32 x) {
+    u32 leading_zeros_u32(u32 x) {
         return __builtin_clz(x);
     }
 
@@ -17,7 +17,7 @@ namespace nk {
     }
 
     u32 round_up_to_power_of_2(u32 v) {
-        u32 nv = 1 << (32 - leading_zeroes_u32(v));
+        u32 nv = 1 << (32 - leading_zeros_u32(v));
         return nv;
     }
 
@@ -61,10 +61,10 @@ namespace nk {
         bits = allocator->allocate<u8>(new_size);
 
         if (old_bits) {
-            std::memcpy(bits, old_bits, size);
+            memcpy(bits, old_bits, size);
             allocator->free(old_bits);
         } else {
-            std::memset(bits, 0, new_size);
+            memset(bits, 0, new_size);
         }
 
         size = new_size;

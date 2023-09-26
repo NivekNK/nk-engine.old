@@ -2,10 +2,6 @@
 
 #include "system/logging.h"
 
-#if defined(NK_PLATFORM_WINDOWS)
-    #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
-#endif
-
 namespace nk {
 #if defined(NK_PLATFORM_WINDOWS)
     void LoggingSystem::activate_virtual_terminal() {

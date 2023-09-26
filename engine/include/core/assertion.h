@@ -41,13 +41,13 @@ namespace nk {
     };
 }
 
-    #define AssertMsg(expr, message, ...)                                                 \
-        {                                                                                 \
-            if (expr) {                                                                   \
-            } else {                                                                      \
-                nk::Assertion::report_assert_failure(#expr, false, message, __VA_ARGS__); \
-                nk::Assertion::debug_break();                                             \
-            }                                                                             \
+    #define AssertMsg(expr, message, ...)                                                               \
+        {                                                                                               \
+            if (expr) {                                                                                 \
+            } else {                                                                                    \
+                nk::Assertion::report_assert_failure(#expr, false, message __VA_OPT__(, ) __VA_ARGS__); \
+                nk::Assertion::debug_break();                                                           \
+            }                                                                                           \
         }
 
     #define Assert(expr)                                               \
@@ -61,7 +61,7 @@ namespace nk {
 
     #define AssertKeep(expr)                  Assert(expr)
 
-    #define AssertKeepMsg(expr, message, ...) AssertMsg(expr, message, __VA_ARGS__)
+    #define AssertKeepMsg(expr, message, ...) AssertMsg(expr, message __VA_OPT__(, ) __VA_ARGS__)
 
 #else
 

@@ -8,12 +8,14 @@
 
 namespace nk {
     void* MallocAllocator::allocate(const szt size, const szt alignment) {
-        InsertMemory(m_name, "MallocAllocator", size, size, 1);
+        DebugLog("Trying to allocate");
+        // InsertMemory(m_name, "MallocAllocator", size, size, 1);
+        // DebugLog("Inserted to map");
         return std::malloc(size);
     }
 
     void MallocAllocator::free(void* ptr) {
-        RemoveMemory(m_name);
+        // RemoveMemory(m_name);
         std::free(ptr);
     }
 }

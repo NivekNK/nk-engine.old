@@ -4,6 +4,7 @@
 int main(void) {
     nk::MallocAllocator allocator{"test"};
     nk::HashMap<nk::cstr, nk::u64> test{&allocator, 16};
+    DebugLog("Finished HashMap Creation");
 
     test.insert("test1", 1);
     test.insert("test2", 2);

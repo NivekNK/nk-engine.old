@@ -36,8 +36,13 @@ set(SOURCES
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 #==================================================
 
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
 target_link_libraries(${PROJECT_NAME}
 PRIVATE
+    Threads::Threads
     tlsf
 )
 
