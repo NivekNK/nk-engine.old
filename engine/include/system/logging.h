@@ -130,11 +130,11 @@ namespace nk {
 #endif
 
 #define ErrorLog(...) ::nk::LoggingSystem::get().Error(__FILE__, __LINE__, __VA_ARGS__)
-#define ErrorIfLog(...) \
+#define ErrorIfLog(value, ...) \
     if (value)          \
     ::nk::LoggingSystem::get().Error(__FILE__, __LINE__, __VA_ARGS__)
 
 #define FatalLog(...) ::nk::LoggingSystem::get().Fatal(__FILE__, __LINE__, __VA_ARGS__)
-#define FatalIfLog(...) \
+#define FatalIfLog(value, ...) \
     if (value)          \
     ::nk::LoggingSystem::get().Fatal(__FILE__, __LINE__, __VA_ARGS__)

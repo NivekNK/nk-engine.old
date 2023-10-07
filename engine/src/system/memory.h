@@ -22,7 +22,7 @@ namespace nk {
         }
 
         inline void substract(szt size) {
-            if (allocated_bytes - size <= 0)
+            if (allocated_bytes - size < 0)
                 return;
 
             allocated_bytes -= size;
@@ -35,13 +35,14 @@ namespace nk {
         NK_SYSTEM_INSTANCE(MemorySystem)
         ~MemorySystem();
 
-        void insert(const cstr name, const cstr allocator_type, szt allocated_bytes, szt total_bytes, u32 allocation_count);
+        void insert(cstr name, const cstr allocator_type, szt allocated_bytes, szt total_bytes, u32 allocation_count);
         bool remove(const cstr name);
 
-        bool add(const cstr name, szt bytes);
-        bool substract(const cstr name, szt bytes);
+        bool add(cstr name, szt bytes);
+        bool substract(cstr name, szt bytes);
 
         MemoryStats* report();
+        void debug_info_report();
 
     private:
         MemorySystem();
@@ -60,3 +61,5 @@ namespace nk {
 #define AddMemory(Name, Bytes)       ::nk::MemorySystem::get().add(Name, Bytes)
 
 #define SubstractMemory(Name, Bytes) ::nk::MemorySystem::get().substract(Name, Bytes)
+
+#define DebugInfoMemoryReport()      ::nk::MemorySystem::get().debug_info_report()

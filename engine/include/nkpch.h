@@ -29,6 +29,7 @@
 #include <optional>
 #include <functional>
 #include <concepts>
+#include <initializer_list>
 
 // Global engine files
 #include "core/defines.h"

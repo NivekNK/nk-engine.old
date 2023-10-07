@@ -256,9 +256,7 @@ namespace nk {
           m_growth_left{0},
           m_control_bytes{detail::group_init_empty()},
           m_slots{nullptr} {
-        DebugLog("HashMap created!");
         reserve(initial_capacity < 4 ? 4 : initial_capacity);
-        DebugLog("HashMap memory reserverd!");
     }
 
     template <typename K, typename V>
@@ -379,13 +377,9 @@ namespace nk {
     void HashMap<K, V>::reserve(u64 new_size) {
         if (new_size <= m_size + m_growth_left)
             return;
-        DebugLog("Correct size");
         szt m = detail::capacity_growth_to_lower_bound(new_size);
-        DebugLog("Capacity growth");
         szt normalized = detail::capacity_normalize(m);
-        DebugLog("Capacity normalize");
         resize(normalized);
-        DebugLog("Resize");
     }
 
     // Private HashMap
@@ -522,16 +516,12 @@ namespace nk {
     template <typename K, typename V>
     void HashMap<K, V>::initialize_slots() {
         char* new_memory = m_allocator->allocate<char>(calculate_size(m_capacity));
-        DebugLog("Allocated Memory");
 
         m_control_bytes = reinterpret_cast<i8*>(new_memory);
         m_slots = reinterpret_cast<KeyValue*>(new_memory + m_capacity + detail::GroupSse2Impl::width);
-        DebugLog("Reinterpreted Memory");
 
         reset_ctrl();
-        DebugLog("reset_ctrl");
         reset_growth_left();
-        DebugLog("reset_growth_left");
     }
 
     template <typename K, typename V>
@@ -542,9 +532,7 @@ namespace nk {
 
         m_capacity = new_capacity;
 
-        DebugLog("before initialize_slots");
         initialize_slots();
-        DebugLog("after initialize_slots");
 
         szt total_probe_length = 0;
         for (szt i = 0; i != old_capacity; i++) {
@@ -561,12 +549,10 @@ namespace nk {
 
             set_ctrl(new_i, detail::hash_2(hash));
             memcpy(m_slots + new_i, old_slots + i, sizeof(KeyValue));
-            DebugLog("Capacity cycle {}", i);
         }
 
         if (old_capacity != 0)
             m_allocator->free(old_control_bytes);
-        DebugLog("Endend resize");
     }
 
     template <typename K, typename V>
