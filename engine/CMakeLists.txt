@@ -21,16 +21,13 @@ target_precompile_headers(${PROJECT_NAME} PUBLIC include/nkpch.h)
 
 #================== Source files ==================
 set(SOURCES
-    src/core/bit.cpp
+    src/memory/allocator.cpp
+    src/memory/malloc_allocator.cpp
 
     src/system/logging.cpp
     src/system/memory.cpp
 
-    src/memory/heap_allocator.cpp
-    src/memory/stack_allocator.cpp
-    src/memory/double_stack_allocator.cpp
-    src/memory/linear_allocator.cpp
-    src/memory/malloc_allocator.cpp
+    src/test.cpp
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})

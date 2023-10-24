@@ -6,6 +6,8 @@ namespace nk {
     template <typename T>
     class Dyarr {
     public:
+        static_assert(!std::is_const_v<T>, "T must not be const");
+
         Dyarr(Allocator* allocator, const u64 initial_capacity, const u64 initial_length = 0)
             : m_data{nullptr},
               m_length{initial_length},
@@ -27,7 +29,7 @@ namespace nk {
 
         ~Dyarr() {
             if (m_capacity > 0) {
-                m_allocator->free(m_data);
+                m_allocator->free(m_data, m_capacity * sizeof(T));
             }
         }
 
@@ -67,6 +69,45 @@ namespace nk {
         u64 capacity() const;
 
         T* data();
+
+        struct Iterator {
+        public:
+            using iterator_category = std::forward_iterator_tag;
+            using difference_type = std::ptrdiff_t;
+            using value_type = T;
+            using pointer = T*;
+            using reference = T&;
+
+            Iterator(pointer ptr) : m_ptr{ptr} {}
+
+            reference operator*() const { return *m_ptr; }
+            pointer operator->() { return m_ptr; }
+
+            Iterator& operator++() {
+                m_ptr++;
+                return *this;
+            }
+
+            Iterator operator++(int) {
+                Iterator tmp = *this;
+                ++(*this);
+                return tmp;
+            }
+
+            friend bool operator==(const Iterator& a, const Iterator& b) {
+                return a.m_ptr == b.m_ptr;
+            }
+
+            friend bool operator!=(const Iterator& a, const Iterator& b) {
+                return a.m_ptr != b.m_ptr;
+            }
+
+        private:
+            pointer m_ptr;
+        };
+
+        Iterator begin() { return Iterator{&m_data[0]}; }
+        Iterator end() { return Iterator{&m_data[m_length]}; }
 
     private:
         T* m_data = nullptr;
@@ -237,7 +278,7 @@ namespace nk {
         T* data = static_cast<T*>(m_allocator->allocate(capacity * sizeof(T), alignof(T)));
         if (m_capacity > 0) {
             memcpy(data, m_data, m_capacity * sizeof(T));
-            m_allocator->free(m_data);
+            m_allocator->free(m_data, m_capacity * sizeof(T));
         }
 
         m_data = data;

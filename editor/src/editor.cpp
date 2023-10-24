@@ -1,43 +1,26 @@
-#include "core/arr.h"
-#include "core/dyarr.h"
 #include "memory/malloc_allocator.h"
-
-void check_array(nk::Arr<nk::u32> check) {
-    for (nk::u32 i = 0; i < check.length(); i++) {
-        DebugLog("Check > Index: {} | Value: {}", i, check[i]);
-    }
-}
+#include "test.h"
 
 int main(void) {
-    nk::MallocAllocator allocator{"test"};
-    nk::Dyarr<nk::u32> test{&allocator, 12};
-    test.push(1213);
-    test.push(223);
-    test.push(213);
+    init();
 
-    auto& value = test.push_use();
-    value = 45;
+    {
+        nk::MallocAllocator allocator{"Test", nk::MemoryType::Editor};
 
-    test.insert(2000, 1);
-    auto& insert_value = test.insert_use(10);
-    insert_value = 8000000;
+        void* test = allocator.allocate(KiB(1), 1);
 
-    for (nk::u32 i = 0; i < test.length(); i++) {
-        DebugLog("Index: {} | Value: {}", i, test[i]->get());
+        void* another_test = allocator.allocate(16, 1);
+
+        test_function();
+
+        allocator.free(test, KiB(1));
+
+        allocator.free(another_test, 16);
+
+        test_function();
     }
 
-    InfoLog("---------------");
-
-    test.pop();
-    test.pop();
-    test.remove_swap_tail(1);
-    test.remove(3);
-
-    for (nk::u32 i = 0; i < test.length(); i++) {
-        DebugLog("Index: {} | Value: {}", i, test[i]->get());
-    }
-
-    check_array(test);
+    shutdown();
 
     return 0;
 }

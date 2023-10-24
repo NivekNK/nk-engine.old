@@ -24,12 +24,16 @@
 	#include <windows.h>
 #endif
 
+// Interfaces
+#include <concepts>
+#include <type_traits>
+#include <optional>
+
 // Memory manipulation
 #include <memory>
-#include <optional>
 #include <functional>
-#include <concepts>
 #include <initializer_list>
+#include <iterator>
 
 // Global engine files
 #include "core/defines.h"

@@ -28,3 +28,7 @@ namespace nk {
     static constexpr const i32 i32_max = INT32_MAX;
     static constexpr const i64 i64_max = INT64_MAX;
 }
+
+#define GiB(Value) Value * 1024 * 1024 * 1024
+#define MiB(Value) Value * 1024 * 1024
+#define KiB(Value) Value * 1024

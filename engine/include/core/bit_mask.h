@@ -14,13 +14,16 @@ namespace nk {
 
 #define NK_BIT_MASK_CREATE(count, name)        name = 0x1 << count
 
-#define CreateEnumBitMask(Name, Values)                                      \
-    enum class Name {                                                        \
-        NK_BIT_MASK_MAP_LIST(NK_BIT_MASK_CREATE, NK_EXPAND_ARGUMENTS Values) \
-    };                                                                       \
-    template <>                                                              \
-    struct EnableEnumClassBitMask<Name> {                                    \
-        static constexpr bool value = true;                                  \
+#define DefineEnumBitMask(Name, Values)                                                     \
+    enum class Name {                                                                       \
+        NK_BIT_MASK_MAP_LIST(NK_BIT_MASK_CREATE, NK_EXPAND_ARGUMENTS Values)                \
+    };                                                                                      \
+    template <>                                                                             \
+    struct EnableEnumClassBitMask<Name> {                                                   \
+        static constexpr bool value = true;                                                 \
+    };                                                                                      \
+    namespace Name##Impl {                                                                  \
+        static inline constexpr u32 count = NK_COUNT_ARGUMENTS(NK_EXPAND_ARGUMENTS Values); \
     }
 
     template <typename T>

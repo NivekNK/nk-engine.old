@@ -4,13 +4,38 @@
 #include "system/memory.h"
 
 namespace nk {
-    void* MallocAllocator::allocate(const szt size, const szt alignment) {
-        InsertMemory(m_name, "MallocAllocator", size, size, 1);
-        return std::malloc(size);
+    MallocAllocator::MallocAllocator([[maybe_unused]] str name, [[maybe_unused]] MemoryType type)
+        : Allocator{0, nullptr, name, type} {
+        MemorySystemUpdate(*this);
     }
 
-    void MallocAllocator::free(void* ptr) {
-        RemoveMemory(m_name);
+    MallocAllocator::MallocAllocator(MallocAllocator&& other)
+        : Allocator{std::move(other)} {
+    }
+
+    MallocAllocator& MallocAllocator::operator=(MallocAllocator&& other) {
+        Allocator::operator=(std::move(other));
+        return *this;
+    }
+
+    MallocAllocator::~MallocAllocator() {
+    }
+
+    void* MallocAllocator::allocate(const u64 size_bytes, const u64 alignment) {
+        m_allocation_count++;
+        m_size_bytes += size_bytes;
+        m_used_bytes += size_bytes;
+        m_start = std::malloc(size_bytes);
+        MemorySystemUpdate(*this);
+        return m_start;
+    }
+
+    void MallocAllocator::free(void* const ptr, const u64 size_bytes) {
+        m_allocation_count--;
+        m_size_bytes -= size_bytes;
+        m_used_bytes -= size_bytes;
         std::free(ptr);
+        m_start = nullptr;
+        MemorySystemUpdate(*this);
     }
 }

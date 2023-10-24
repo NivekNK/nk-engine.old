@@ -1,40 +1,66 @@
 #pragma once
 
+#include "memory/memory_type.h"
+
 namespace nk {
     class Allocator {
     public:
-        Allocator([[maybe_unused]] const cstr name)
-#if !defined(NK_RELEASE)
-            : m_name{name}
-#endif
-        {
-        }
-
-        virtual ~Allocator() = default;
+        Allocator(const u64 size_bytes, void* const start, [[maybe_unused]] str name, [[maybe_unused]] MemoryType type);
 
         Allocator(const Allocator&) = delete;
         Allocator& operator=(Allocator&) = delete;
 
-        virtual void* allocate(const szt size, const szt alignment) = 0;
-        virtual void free(void* ptr) = 0;
+        Allocator(Allocator&&);
+        Allocator& operator=(Allocator&&);
 
-        inline void* allocate(const szt size) { return allocate(size, 1); }
-        inline u8* allocatem(const szt size) { return static_cast<u8*>(allocate(size, 1)); }
-
-        template <typename T>
-        inline T* allocate() { return static_cast<T*>(allocate(sizeof(T), 1)); }
+        virtual ~Allocator();
 
         template <typename T>
-        inline T* allocate(const szt size) { return static_cast<T*>(allocate(size, 1)); }
-
-    protected:
-        inline szt memory_align(const szt size, const szt alignment) {
-            const szt alignment_mask = alignment - 1;
-            return (size + alignment_mask) & ~alignment_mask;
+        constexpr inline T* allocate(const u64 lot = 1) {
+            return static_cast<T*>(allocate(sizeof(T) * lot, alignof(T)));
         }
 
+        template <typename T, typename... Args>
+        inline T* construct(Args&&... args) {
+            return new (allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
+        }
+
+        template <typename T>
+        inline void destroy(T* ptr) {
+            if (ptr == nullptr) {
+                WarnLog("Trying to destroy nullptr!");
+                return;
+            }
+
+            ptr->~T();
+            free(ptr, sizeof(T));
+        }
+
+        inline u64 size() const { return m_size_bytes; }
+        inline u64 used() const { return m_used_bytes; }
+        inline u64 allocation_count() const { return m_allocation_count; }
+        inline const void* start() const { return m_start; }
+
 #if !defined(NK_RELEASE)
-        const cstr m_name;
+        inline cstr name() const { return m_name.c_str(); }
+        inline MemoryType type() const { return m_type; }
+
+        virtual const cstr to_string() const = 0;
+#endif
+
+        virtual void* allocate(const u64 size_bytes, [[maybe_unused]] const u64 alignment) = 0;
+        virtual void free(void* const ptr, [[maybe_unused]] const u64 size_bytes) = 0;
+
+    protected:
+        u64 m_size_bytes;
+        u64 m_used_bytes;
+        u64 m_allocation_count;
+
+        void* m_start;
+
+#if !defined(NK_RELEASE)
+        str m_name;
+        MemoryType m_type;
 #endif
     };
 }

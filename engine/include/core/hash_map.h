@@ -1,7 +1,6 @@
 #pragma once
 
 #include "memory/allocator.h"
-#include "core/bit.h"
 
 #include "wyhash/wyhash.h"
 
@@ -50,6 +49,7 @@ namespace nk {
 
         void clear();
         void reserve(u64 new_size);
+        u64 size() const { return m_size; }
 
     private:
         void erase_meta(const Iterator& it);
@@ -180,6 +180,51 @@ namespace nk {
         static u64 hash_1(u64 hash, const i8* ctrl) { return (hash >> 7) ^ hash_seed(ctrl); }
         static i8 hash_2(u64 hash) { return hash & 0x7F; }
 
+        static u32 leading_zeros_u32(u32 x) { return __builtin_clz(x); }
+        static u32 trailing_zeros_u32(u32 x) { return __builtin_ctz(x); }
+
+        template <class T, int SignificantBits, int Shift = 0>
+        class BitMask {
+        public:
+            using value_type = i32;
+            using iterator = BitMask;
+            using const_iterator = BitMask;
+
+            explicit BitMask(T mask) : m_mask(mask) {}
+
+            BitMask& operator++() {
+                m_mask &= (m_mask - 1);
+                return *this;
+            }
+
+            explicit operator bool() const { return m_mask != 0; }
+            int operator*() const { return lowest_bit_set(); }
+
+            u32 lowest_bit_set() const {
+                return trailing_zeros_u32(m_mask) >> Shift;
+            }
+            u32 highest_bit_set() const {
+                return static_cast<u32>((bit_width(m_mask) - 1) >> Shift);
+            }
+
+            BitMask begin() const { return *this; }
+            BitMask end() const { return BitMask(0); }
+
+            u32 trailing_zeros() const { return trailing_zeros_u32(m_mask); }
+            u32 leading_zeros() const { return leading_zeros_u32(m_mask); }
+
+        private:
+            friend bool operator==(const BitMask& a, const BitMask& b) {
+                return a.m_mask == b.m_mask;
+            }
+
+            friend bool operator!=(const BitMask& a, const BitMask& b) {
+                return a.m_mask != b.m_mask;
+            }
+
+            T m_mask;
+        };
+
         class GroupSse2Impl {
         public:
             static constexpr size_t width = 16; // the number of slots per group
@@ -188,25 +233,25 @@ namespace nk {
                 ctrl = _mm_loadu_si128(reinterpret_cast<const __m128i*>(pos));
             }
 
-            BitMask<uint32_t, width> match(i8 hash) const {
+            BitMask<u32, width> match(i8 hash) const {
                 auto match = _mm_set1_epi8(hash);
-                return BitMask<uint32_t, width>(
+                return BitMask<u32, width>(
                     _mm_movemask_epi8(_mm_cmpeq_epi8(match, ctrl)));
             }
 
-            BitMask<uint32_t, width> match_empty() const {
+            BitMask<u32, width> match_empty() const {
                 return match(static_cast<i8>(control_bitmask_empty));
             }
 
-            BitMask<uint32_t, width> match_empty_or_deleted() const {
+            BitMask<u32, width> match_empty_or_deleted() const {
                 auto special = _mm_set1_epi8(control_bitmask_sentinel);
-                return BitMask<uint32_t, width>(
+                return BitMask<u32, width>(
                     _mm_movemask_epi8(_mm_cmpgt_epi8(special, ctrl)));
             }
 
-            uint32_t count_leading_empty_or_deleted() const {
+            u32 count_leading_empty_or_deleted() const {
                 auto special = _mm_set1_epi8(control_bitmask_sentinel);
-                return trailing_zeros_u32(static_cast<uint32_t>(
+                return trailing_zeros_u32(static_cast<u32>(
                     _mm_movemask_epi8(_mm_cmpgt_epi8(special, ctrl)) + 1));
             }
 
@@ -261,7 +306,7 @@ namespace nk {
 
     template <typename K, typename V>
     HashMap<K, V>::~HashMap() {
-        m_allocator->free(m_control_bytes);
+        m_allocator->free(m_control_bytes, calculate_size(m_capacity));
     }
 
     template <typename K, typename V>
@@ -552,7 +597,7 @@ namespace nk {
         }
 
         if (old_capacity != 0)
-            m_allocator->free(old_control_bytes);
+            m_allocator->free(old_control_bytes, calculate_size(old_capacity));
     }
 
     template <typename K, typename V>

@@ -5,10 +5,23 @@
 namespace nk {
     class MallocAllocator : public Allocator {
     public:
-        MallocAllocator(const cstr name) : Allocator(name) {}
-        virtual ~MallocAllocator() override = default;
+        MallocAllocator([[maybe_unused]] str name, [[maybe_unused]] MemoryType type);
 
-        virtual void* allocate(const szt size, const szt alignment) override;
-        virtual void free(void* ptr) override;
+        MallocAllocator(const MallocAllocator&) = delete;
+        MallocAllocator& operator=(MallocAllocator&) = delete;
+
+        MallocAllocator(MallocAllocator&&);
+        MallocAllocator& operator=(MallocAllocator&&);
+
+        virtual ~MallocAllocator() override;
+
+#if !defined(NK_RELEASE)
+        virtual const cstr to_string() const override {
+            return "MallocAllocator";
+        }
+#endif
+
+        virtual void* allocate(const u64 size_bytes, [[maybe_unused]] const u64 alignment) override;
+        virtual void free(void* const ptr, [[maybe_unused]] const u64 size_bytes) override;
     };
 }

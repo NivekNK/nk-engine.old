@@ -50,6 +50,8 @@ namespace nk {
             return *this;
         }
 
+        void styled_log(const cstr message, i8 font, i8 background, i8 style);
+
         NK_CREATE_LOG_FUNCTION(Trace)
         NK_CREATE_LOG_FUNCTION(Debug)
         NK_CREATE_LOG_FUNCTION(Info)
@@ -131,10 +133,13 @@ namespace nk {
 
 #define ErrorLog(...) ::nk::LoggingSystem::get().Error(__FILE__, __LINE__, __VA_ARGS__)
 #define ErrorIfLog(value, ...) \
-    if (value)          \
+    if (value)                 \
     ::nk::LoggingSystem::get().Error(__FILE__, __LINE__, __VA_ARGS__)
 
 #define FatalLog(...) ::nk::LoggingSystem::get().Fatal(__FILE__, __LINE__, __VA_ARGS__)
 #define FatalIfLog(value, ...) \
-    if (value)          \
+    if (value)                 \
     ::nk::LoggingSystem::get().Fatal(__FILE__, __LINE__, __VA_ARGS__)
+
+#define StyledLog(message, font, background, style) \
+    ::nk::LoggingSystem::get().styled_log(message, font, background, style)

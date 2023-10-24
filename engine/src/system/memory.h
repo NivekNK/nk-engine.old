@@ -1,65 +1,68 @@
 #pragma once
 
-#include "core/system.h"
+#if !defined(NK_RELEASE)
+
+#include "memory/memory_type.h"
 #include "core/hash_map.h"
 
 namespace nk {
     class Allocator;
 
+    template <typename T>
+    class Dyarr;
+
     struct MemoryStats {
-        cstr name;
-        cstr allocator_type;
-        szt allocated_bytes;
-        szt total_bytes;
-        u32 allocation_count;
+        str name;
+        str allocator;
+        MemoryType type;
 
-        inline void add(szt size) {
-            if (size <= 0)
-                return;
-
-            allocated_bytes += size;
-            allocation_count++;
-        }
-
-        inline void substract(szt size) {
-            if (allocated_bytes - size < 0)
-                return;
-
-            allocated_bytes -= size;
-            allocation_count--;
-        }
+        u64 size_bytes;
+        u64 used_bytes;
+        u64 allocation_count;
     };
 
-    class MemorySystem : public System {
+    class MemorySystem {
     public:
-        NK_SYSTEM_INSTANCE(MemorySystem)
         ~MemorySystem();
 
-        void insert(cstr name, const cstr allocator_type, szt allocated_bytes, szt total_bytes, u32 allocation_count);
-        bool remove(const cstr name);
+        static void init();
+        static void shutdown();
 
-        bool add(cstr name, szt bytes);
-        bool substract(cstr name, szt bytes);
+        void update(const Allocator& allocator);
 
-        MemoryStats* report();
-        void debug_info_report();
+        void allocations(Dyarr<MemoryStats>& allocations);
+
+        str memory_in_bytes(u64 memory);
+        cstr memory_type_to_string(MemoryType memory_type);
+
+        void log_report();
+
+        static inline MemorySystem& get() {
+            Assert(s_instance != nullptr);
+            return *s_instance;
+        }
 
     private:
         MemorySystem();
 
-        szt m_used_memory = 0;
         Allocator* m_allocator;
+
         HashMap<cstr, MemoryStats> m_allocations;
+
+        static MemorySystem* s_instance;
     };
 }
 
-#define InsertMemory(Name, AllocatorType, AllocatedBytes, TotalBytes, AllocationCount) \
-    ::nk::MemorySystem::get().insert(Name, AllocatorType, AllocatedBytes, TotalBytes, AllocationCount)
+#define MemorySystemInit()            ::nk::MemorySystem::init()
+#define MemorySystemShutdown()        ::nk::MemorySystem::shutdown()
+#define MemorySystemUpdate(Allocator) ::nk::MemorySystem::get().update(Allocator)
+#define MemorySystemReport()          ::nk::MemorySystem::get().log_report()
 
-#define RemoveMemory(Name)           ::nk::MemorySystem::get().remove(Name)
+#else
 
-#define AddMemory(Name, Bytes)       ::nk::MemorySystem::get().add(Name, Bytes)
+#define MemorySystemInit()
+#define MemorySystemShutdown()
+#define MemorySystemUpdate(Allocator)
+#define MemorySystemReport()
 
-#define SubstractMemory(Name, Bytes) ::nk::MemorySystem::get().substract(Name, Bytes)
-
-#define DebugInfoMemoryReport()      ::nk::MemorySystem::get().debug_info_report()
+#endif

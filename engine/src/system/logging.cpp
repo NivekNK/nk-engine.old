@@ -3,6 +3,17 @@
 #include "system/logging.h"
 
 namespace nk {
+    void LoggingSystem::styled_log(const cstr message, i8 font, i8 background, i8 style) {
+        std::scoped_lock lock(m_log_mutex);
+        std::cout << colorize(font, background, style)
+                  << message
+                  << "\033[0m\n"
+                  << std::flush;
+
+        if (m_file_output) {
+        }
+    }
+
 #if defined(NK_PLATFORM_WINDOWS)
     void LoggingSystem::activate_virtual_terminal() {
         HANDLE handleOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -55,15 +66,6 @@ namespace nk {
             file,
             line);
 
-        std::scoped_lock lock(m_log_mutex);
-        std::cout << colorize(m_style[priority][0],
-                              m_style[priority][1],
-                              m_style[priority][2])
-                  << formatted_message
-                  << "\033[0m\n"
-                  << std::flush;
-
-        if (m_file_output) {
-        }
+        styled_log(formatted_message.c_str(), m_style[priority][0], m_style[priority][1], m_style[priority][2]);
     }
 }
