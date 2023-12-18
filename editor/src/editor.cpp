@@ -1,24 +1,31 @@
 #include "memory/malloc_allocator.h"
 #include "test.h"
 
+#include "core/file.h"
+
 int main(void) {
     init();
 
     {
-        nk::MallocAllocator allocator{"Test", nk::MemoryType::Editor};
+        nk::MallocAllocator allocator{"TestFile", nk::MemoryType::Editor};
+        nk::File* file = nk::File::open(&allocator, "./test.txt", nk::FileMode::Read | nk::FileMode::Write);
 
-        void* test = allocator.allocate(KiB(1), 1);
-
-        void* another_test = allocator.allocate(16, 1);
 
         test_function();
 
-        allocator.free(test, KiB(1));
+        nk::str line;
+        while (file->read_line_string(line, 512)) {
+            std::cout << line << std::endl;
+        }
 
-        allocator.free(another_test, 16);
+        char text[] = "Hello world!";
+        file->write(text, 12, true, false);
 
-        test_function();
+        file->close();
+        allocator.destroy(file);
     }
+
+    test_function();
 
     shutdown();
 

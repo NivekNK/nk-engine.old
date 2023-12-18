@@ -1,12 +1,12 @@
 #pragma once
 
 // File manipulation
-#define __STDC_LIB_EXT1__
-#define __STDC_WANT_LIB_EXT1__ 1
+// #define __STDC_LIB_EXT1__
+// #define __STDC_WANT_LIB_EXT1__ 1
 #include <stdio.h>
 #include <filesystem>
 
-// Wrtie to the console
+// Write to the console
 #include <iostream>
 
 // String manipulation
@@ -22,6 +22,10 @@
 // Windows specific
 #if defined(NK_PLATFORM_WINDOWS)
 	#include <windows.h>
+#else
+    #include <stdlib.h>
+    #include <sys/stat.h>
+    #include <unistd.h>
 #endif
 
 // Interfaces

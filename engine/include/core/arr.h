@@ -1,5 +1,7 @@
 #pragma once
 
+#include "memory/allocator.h"
+
 namespace nk {
     template <typename D, typename T>
     concept IDyarr = requires(D& dyarr) {
@@ -30,6 +32,8 @@ namespace nk {
         }
 
         u64 length() const { return m_length; }
+        T* data() { return m_data; }
+        void free(Allocator* allocator) { allocator->free(m_data, m_length * sizeof(T)); }
 
         struct Iterator {
         public:

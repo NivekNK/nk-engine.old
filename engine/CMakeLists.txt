@@ -21,6 +21,8 @@ target_precompile_headers(${PROJECT_NAME} PUBLIC include/nkpch.h)
 
 #================== Source files ==================
 set(SOURCES
+    src/core/file.cpp
+
     src/memory/allocator.cpp
     src/memory/malloc_allocator.cpp
 

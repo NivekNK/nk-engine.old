@@ -1,7 +1,5 @@
 #pragma once
 
-#include "core/system.h"
-
 #if defined(NK_RELEASE)
     #define NK_LOG_TRACE_ENABLED 0
     #define NK_LOG_DEBUG_ENABLED 0
@@ -27,9 +25,17 @@
     }
 
 namespace nk {
-    class LoggingSystem : public System {
+    class LoggingSystem {
     public:
-        NK_SYSTEM_INSTANCE(LoggingSystem)
+        static void init() {
+            LoggingSystem& system = get();
+        }
+
+        static LoggingSystem& get() {
+            static LoggingSystem instance;
+            return instance;
+        }
+
         ~LoggingSystem() = default;
 
         enum Priority {

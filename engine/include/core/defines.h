@@ -32,3 +32,5 @@ namespace nk {
 #define GiB(Value) Value * 1024 * 1024 * 1024
 #define MiB(Value) Value * 1024 * 1024
 #define KiB(Value) Value * 1024
+
+#define api __declspec(dllexport)

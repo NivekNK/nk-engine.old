@@ -16,6 +16,7 @@ namespace nk {
 
 #define DefineEnumBitMask(Name, Values)                                                     \
     enum class Name {                                                                       \
+        None = 0,                                                                           \
         NK_BIT_MASK_MAP_LIST(NK_BIT_MASK_CREATE, NK_EXPAND_ARGUMENTS Values)                \
     };                                                                                      \
     template <>                                                                             \
