@@ -46,7 +46,6 @@ namespace nk {
         MemorySystem();
 
         Allocator* m_allocator;
-
         HashMap<cstr, MemoryStats> m_allocations;
 
         static MemorySystem* s_instance;

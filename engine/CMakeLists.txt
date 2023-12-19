@@ -29,8 +29,17 @@ set(SOURCES
     src/system/logging.cpp
     src/system/memory.cpp
 
-    src/test.cpp
+    src/nk/app.cpp
+    src/nk/app_creator.cpp
 )
+
+if (WIN32)
+    list(APPEND SOURCES
+        src/platform/platform_win32.cpp
+    )
+elseif (UNIX AND NOT APPLE)
+    message(WARNING "Linux specific sources not yet implemented!")
+endif()
 
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 #==================================================

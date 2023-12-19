@@ -22,6 +22,7 @@
 // Windows specific
 #if defined(NK_PLATFORM_WINDOWS)
 	#include <windows.h>
+    #include <windowsx.h>
 #else
     #include <stdlib.h>
     #include <sys/stat.h>

@@ -1,33 +1,14 @@
-#include "memory/malloc_allocator.h"
-#include "test.h"
+#include <nk/entry_point.h>
 
-#include "core/file.h"
-
-int main(void) {
-    init();
-
-    {
-        nk::MallocAllocator allocator{"TestFile", nk::MemoryType::Editor};
-        nk::File* file = nk::File::open(&allocator, "./test.txt", nk::FileMode::Read | nk::FileMode::Write);
-
-
-        test_function();
-
-        nk::str line;
-        while (file->read_line_string(line, 512)) {
-            std::cout << line << std::endl;
-        }
-
-        char text[] = "Hello world!";
-        file->write(text, 12, true, false);
-
-        file->close();
-        allocator.destroy(file);
+class Editor : public nk::App {
+public:
+    Editor() : nk::App("Editor") {
+        DebugLog("Create Editor");
     }
 
-    test_function();
+    virtual ~Editor() override {
+        DebugLog("Editor destroyed");
+    }
+};
 
-    shutdown();
-
-    return 0;
-}
+CREATE_APP(Editor)

@@ -27,9 +27,7 @@
 namespace nk {
     class LoggingSystem {
     public:
-        static void init() {
-            LoggingSystem& system = get();
-        }
+        static void init() { get(); }
 
         static LoggingSystem& get() {
             static LoggingSystem instance;
