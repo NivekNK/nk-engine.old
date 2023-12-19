@@ -2,7 +2,7 @@
 
 #include "memory/allocator.h"
 
-#include "system/memory.h"
+#include "nk/memory_manager.h"
 
 namespace nk {
     Allocator::Allocator(const u64 size_bytes, void* const start, str name, MemoryType type)

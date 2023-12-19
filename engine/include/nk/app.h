@@ -1,8 +1,19 @@
 #pragma once
 
-#include "memory/allocator.h"
+#include "nk/window.h"
 
 namespace nk {
+    class Allocator;
+    class Platform;
+
+    struct ApplicationConfig {
+        str name;
+        i16 start_pos_x;
+        i16 start_pos_y;
+        u16 start_width;
+        u16 start_height;
+    };
+
     class App {
     public:
         virtual ~App() = default;
@@ -13,10 +24,13 @@ namespace nk {
         static void close() { get().m_running = false; }
 
     protected:
-        App(str name);
+        App(const ApplicationConfig& config);
 
         bool m_running;
-        str m_name;
+        f64 m_last_time;
+
+        Window m_window;
+        Platform* m_platform;
 
     private:
         static App* s_instance;

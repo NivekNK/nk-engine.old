@@ -21,9 +21,9 @@ namespace nk {
         u64 allocation_count;
     };
 
-    class MemorySystem {
+    class MemoryManager {
     public:
-        ~MemorySystem();
+        ~MemoryManager();
 
         static void init();
         static void shutdown();
@@ -37,31 +37,31 @@ namespace nk {
 
         void log_report();
 
-        static inline MemorySystem& get() {
+        static inline MemoryManager& get() {
             Assert(s_instance != nullptr);
             return *s_instance;
         }
 
     private:
-        MemorySystem();
+        MemoryManager();
 
         Allocator* m_allocator;
         HashMap<cstr, MemoryStats> m_allocations;
 
-        static MemorySystem* s_instance;
+        static MemoryManager* s_instance;
     };
 }
 
-#define MemorySystemInit()            ::nk::MemorySystem::init()
-#define MemorySystemShutdown()        ::nk::MemorySystem::shutdown()
-#define MemorySystemUpdate(Allocator) ::nk::MemorySystem::get().update(Allocator)
-#define MemorySystemReport()          ::nk::MemorySystem::get().log_report()
+#define MemoryManagerInit()            ::nk::MemoryManager::init()
+#define MemoryManagerShutdown()        ::nk::MemoryManager::shutdown()
+#define MemoryManagerUpdate(Allocator) ::nk::MemoryManager::get().update(Allocator)
+#define MemoryManagerReport()          ::nk::MemoryManager::get().log_report()
 
 #else
 
-#define MemorySystemInit()
-#define MemorySystemShutdown()
-#define MemorySystemUpdate(Allocator)
-#define MemorySystemReport()
+#define MemoryManagerInit()
+#define MemoryManagerShutdown()
+#define MemoryManagerUpdate(Allocator)
+#define MemoryManagerReport()
 
 #endif

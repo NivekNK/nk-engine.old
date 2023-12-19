@@ -1,12 +1,12 @@
 #include "nkpch.h"
 
 #include "memory/malloc_allocator.h"
-#include "system/memory.h"
+#include "nk/memory_manager.h"
 
 namespace nk {
     MallocAllocator::MallocAllocator([[maybe_unused]] str name, [[maybe_unused]] MemoryType type)
         : Allocator{0, nullptr, name, type} {
-        MemorySystemUpdate(*this);
+        MemoryManagerUpdate(*this);
     }
 
     MallocAllocator::MallocAllocator(MallocAllocator&& other)
@@ -26,7 +26,7 @@ namespace nk {
         m_size_bytes += size_bytes;
         m_used_bytes += size_bytes;
         m_start = std::malloc(size_bytes);
-        MemorySystemUpdate(*this);
+        MemoryManagerUpdate(*this);
         return m_start;
     }
 
@@ -36,6 +36,6 @@ namespace nk {
         m_used_bytes -= size_bytes;
         std::free(ptr);
         m_start = nullptr;
-        MemorySystemUpdate(*this);
+        MemoryManagerUpdate(*this);
     }
 }

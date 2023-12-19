@@ -2,23 +2,28 @@
 
 #include "nk/app_creator.h"
 
-#include "system/memory.h"
-#include "memory/malloc_allocator.h"
+#include "nk/memory_manager.h"
+#include "nk/system_manager.h"
+#include "memory/allocator.h"
 
 namespace nk {
     i32 entry_point(i32 argc, char** argv) {
-        MemorySystemInit();
+        MemoryManagerInit();
 
         {
-            MallocAllocator allocator{"App", MemoryType::Application};
-            auto app = create_application(&allocator);
-            MemorySystemReport();
+            SystemManager::init();
+
+            auto allocator = SystemManager::get_system_allocator();
+            auto app = create_application(allocator);
+            MemoryManagerReport();
             app->run();
-            allocator.destroy(app);
+            allocator->destroy(app);
+
+            SystemManager::shutdown();
         }
 
-        MemorySystemReport();
-        MemorySystemShutdown();
+        MemoryManagerReport();
+        MemoryManagerShutdown();
 
         return EXIT_SUCCESS;
     }

@@ -1,7 +1,7 @@
 #include "nkpch.h"
 
 #include "core/dyarr.h"
-#include "system/memory.h"
+#include "nk/memory_manager.h"
 
 #include "memory/allocator.h"
 
@@ -24,26 +24,26 @@ namespace nk {
         }
     };
 
-    MemorySystem* MemorySystem::s_instance = nullptr;
+    MemoryManager* MemoryManager::s_instance = nullptr;
 
-    MemorySystem::MemorySystem()
+    MemoryManager::MemoryManager()
         : m_allocator{new DebugMallocAllocator()},
           m_allocations{m_allocator, 32} {
     }
 
-    MemorySystem::~MemorySystem() {
+    MemoryManager::~MemoryManager() {
         std::free(m_allocator);
     }
 
-    void MemorySystem::init() {
-        s_instance = new MemorySystem();
+    void MemoryManager::init() {
+        s_instance = new MemoryManager();
     }
 
-    void MemorySystem::shutdown() {
+    void MemoryManager::shutdown() {
         delete s_instance;
     }
 
-    void MemorySystem::update(const Allocator& allocator) {
+    void MemoryManager::update(const Allocator& allocator) {
         m_allocations.insert(allocator.name(), {
             .name = allocator.name(),
             .allocator = allocator.to_string(),
@@ -54,7 +54,7 @@ namespace nk {
         });
     }
 
-    void MemorySystem::allocations(Dyarr<MemoryStats>& stats) {
+    void MemoryManager::allocations(Dyarr<MemoryStats>& stats) {
         stats.set_capacity(m_allocations.size());
         stats.set_length(m_allocations.size());
 
@@ -68,7 +68,7 @@ namespace nk {
         }
     }
 
-    str MemorySystem::memory_in_bytes(u64 memory) {
+    str MemoryManager::memory_in_bytes(u64 memory) {
         // TODO: Add to math library
         static constexpr u64 gib = 1024 * 1024 * 1024;
         static constexpr u64 mib = 1024 * 1024;
@@ -85,7 +85,7 @@ namespace nk {
         }
     }
 
-    cstr MemorySystem::memory_type_to_string(MemoryType memory_type) {
+    cstr MemoryManager::memory_type_to_string(MemoryType memory_type) {
         switch (memory_type) {
             case MemoryType::None:
                 return "None (Invalid)";
@@ -100,7 +100,7 @@ namespace nk {
         }
     }
 
-    void MemorySystem::log_report() {
+    void MemoryManager::log_report() {
         u64 total_allocated = 0;
 
         u64 type_allocated[static_cast<u32>(MemoryType::MaxTypes)] = {0};
