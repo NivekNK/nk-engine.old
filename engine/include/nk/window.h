@@ -1,5 +1,8 @@
 #pragma once
 
+#include "event/event_dispatcher.h"
+#include "event/application_event.h"
+
 namespace nk {
     struct ApplicationConfig;
 
@@ -22,5 +25,9 @@ namespace nk {
         i16 m_pos_y;
         u16 m_width;
         u16 m_height;
+
+        EventDispatcher m_dispatcher;
+        EventDispatcher::Handle m_test;
+        WindowCloseEvent m_close_test;
     };
 }

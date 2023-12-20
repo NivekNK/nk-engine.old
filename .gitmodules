@@ -4,3 +4,6 @@
 [submodule "engine/vendor/internal/wyhash"]
 	path = engine/vendor/internal/wyhash
 	url = https://github.com/wangyi-fudan/wyhash
+[submodule "engine/vendor/eventpp"]
+	path = engine/vendor/eventpp
+	url = https://github.com/wqking/eventpp.git

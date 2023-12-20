@@ -15,6 +15,7 @@ endif()
 #==================================================
 
 add_subdirectory(vendor/tlsf)
+add_subdirectory(vendor/eventpp)
 
 add_library(${PROJECT_NAME} STATIC)
 target_precompile_headers(${PROJECT_NAME} PUBLIC include/nkpch.h)
@@ -54,6 +55,7 @@ target_link_libraries(${PROJECT_NAME}
 PRIVATE
     Threads::Threads
     tlsf
+    eventpp::eventpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -66,4 +68,5 @@ PUBLIC
     #Libraries
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/internal
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tlsf/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/eventpp/include
 )

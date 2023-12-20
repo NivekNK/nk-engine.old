@@ -127,18 +127,33 @@ namespace nk {
             case WM_ERASEBKGND:
                 // Notify the OS that erasing will be handled by the application to prevent flicker.
                 return 1;
-            case WM_CLOSE:
-                // TODO: Fire an event fot the application to quit.
-                return 0;
             case WM_DESTROY:
                 PostQuitMessage(0);
                 return 0;
+            case WM_CLOSE:
+                // TODO: Fire an event for the application to quit.
+                return 0;
             case WM_SIZE: {
-                // RECT rect;
-                // GetClientRect(hwnd, &rect);
-                // u32 width = rect.right - rect.left;
-                // u32 height = rect.bottom - rect.top;
+                // WINDOWPLACEMENT placement;
+                // placement.length = sizeof(WINDOWPLACEMENT);
+                // GetWindowPlacement(hwnd, &placement);
+                // u16 width = placement.rcNormalPosition.right - placement.rcNormalPosition.left;
+                // u16 height = placement.rcNormalPosition.bottom - placement.rcNormalPosition.top;
                 // TODO: Fire an event to window resize.
+            } break;
+            case WM_ACTIVATEAPP: {
+                // if (wparam) {
+                //     // TODO: Application gained focus.
+                // } else {
+                //     // TODO: Application lost focus.
+                // }
+            } break;
+            case WM_WINDOWPOSCHANGING: {
+                // RECT rect;
+                // GetWindowRect(hwnd, &rect);
+                // i16 x = rect.left;
+                // i16 y = rect.top;
+                // TODO: Application position moved.
             } break;
             case WM_KEYDOWN:
             case WM_SYSKEYDOWN:
