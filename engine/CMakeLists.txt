@@ -33,6 +33,7 @@ set(SOURCES
     src/nk/memory_manager.cpp
     src/nk/app.cpp
     src/nk/app_creator.cpp
+    src/nk/clock.cpp
     src/nk/window.cpp
 )
 
