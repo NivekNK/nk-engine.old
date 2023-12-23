@@ -98,7 +98,7 @@ namespace nk {
         // Clock setup
         LARGE_INTEGER frequency;
         QueryPerformanceFrequency(&frequency);
-        s_clock_frequency = 1.0 / static_cast<f64>(frequency.QuadPart);
+        s_clock_frequency = 1.0f / static_cast<f64>(frequency.QuadPart);
         QueryPerformanceCounter(&s_start_time);
     }
 
@@ -164,27 +164,24 @@ namespace nk {
             case WM_SYSKEYDOWN: {
                 // Key pressed
                 KeyCodeFlag keycode = static_cast<KeyCodeFlag>(wparam);
-                InputSystem::get().process_key(keycode, true);
+                InputSystem::process_key(keycode, true);
                 KeyPressedEvent event{keycode, 0, 1};
-                auto& key_callback = App::gey_key_callback();
-                key_callback(event);
+                App::on_key_event(event);
             } break;
             case WM_KEYUP:
             case WM_SYSKEYUP: {
                 // Key released
                 KeyCodeFlag keycode = static_cast<KeyCodeFlag>(wparam);
-                InputSystem::get().process_key(keycode, false);
+                InputSystem::process_key(keycode, false);
                 KeyReleasedEvent event{keycode, 0};
-                auto& key_callback = App::gey_key_callback();
-                key_callback(event);
+                App::on_key_event(event);
             } break;
             case WM_MOUSEMOVE: {
                 i32 x_position = GET_X_LPARAM(lparam);
                 i32 y_position = GET_Y_LPARAM(lparam);
-                InputSystem::get().process_mouse_move(x_position, y_position);
+                InputSystem::process_mouse_move(x_position, y_position);
                 MouseMovedEvent event{x_position, y_position};
-                auto& event_callback = App::get_event_callback();
-                event_callback(event);
+                App::on_event(event);
             } break;
             case WM_MOUSEWHEEL: {
                 f32 z_delta = GET_WHEEL_DELTA_WPARAM(wparam);
@@ -193,45 +190,38 @@ namespace nk {
                     z_delta /= 120.0f;
                     i8 z_delta_normalized = z_delta < 0 ? -1 : 1;
                     MouseScrolledEvent event{z_delta, z_delta_normalized};
-                    auto& event_callback = App::get_event_callback();
-                    event_callback(event);
+                    App::on_event(event);
                 }
             } break;
             case WM_LBUTTONDOWN: {
-                InputSystem::get().process_mouse_button(MouseButton::Left, true);
+                InputSystem::process_mouse_button(MouseButton::Left, true);
                 MouseButtonPressedEvent event{MouseButton::Left};
-                auto& event_callback = App::get_event_callback();
-                event_callback(event);
+                App::on_event(event);
             } break;
             case WM_MBUTTONDOWN: {
-                InputSystem::get().process_mouse_button(MouseButton::Middle, true);
+                InputSystem::process_mouse_button(MouseButton::Middle, true);
                 MouseButtonPressedEvent event{MouseButton::Middle};
-                auto& event_callback = App::get_event_callback();
-                event_callback(event);
+                App::on_event(event);
             } break;
             case WM_RBUTTONDOWN: {
-                InputSystem::get().process_mouse_button(MouseButton::Right, true);
+                InputSystem::process_mouse_button(MouseButton::Right, true);
                 MouseButtonPressedEvent event{MouseButton::Right};
-                auto& event_callback = App::get_event_callback();
-                event_callback(event);
+                App::on_event(event);
             } break;
             case WM_LBUTTONUP: {
-                InputSystem::get().process_mouse_button(MouseButton::Left, false);
+                InputSystem::process_mouse_button(MouseButton::Left, false);
                 MouseButtonReleasedEvent event{MouseButton::Left};
-                auto& event_callback = App::get_event_callback();
-                event_callback(event);
+                App::on_event(event);
             } break;
             case WM_MBUTTONUP: {
-                InputSystem::get().process_mouse_button(MouseButton::Middle, false);
+                InputSystem::process_mouse_button(MouseButton::Middle, false);
                 MouseButtonReleasedEvent event{MouseButton::Middle};
-                auto& event_callback = App::get_event_callback();
-                event_callback(event);
+                App::on_event(event);
             } break;
             case WM_RBUTTONUP: {
-                InputSystem::get().process_mouse_button(MouseButton::Right, false);
+                InputSystem::process_mouse_button(MouseButton::Right, false);
                 MouseButtonReleasedEvent event{MouseButton::Right};
-                auto& event_callback = App::get_event_callback();
-                event_callback(event);
+                App::on_event(event);
             } break;
         }
 

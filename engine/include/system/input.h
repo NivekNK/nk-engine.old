@@ -70,12 +70,23 @@ namespace nk {
             get().get_previous_mouse_position_impl(out_x, out_y);
         }
 
-        KeyboardState get_previous_keyboard_state() const { return m_previous_keyboard_state; }
+        static void update(f64 delta_time) {
+            get().update_impl(delta_time);
+        }
 
-        void update(f64 delta_time);
-        void process_key(KeyCodeFlag keycode, bool pressed);
-        void process_mouse_button(MouseButton button, bool pressed);
-        void process_mouse_move(i32 x, i32 y);
+        static void process_key(KeyCodeFlag keycode, bool pressed) {
+            get().process_key_impl(keycode, pressed);
+        }
+
+        static void process_mouse_button(MouseButton button, bool pressed) {
+            get().process_mouse_button_impl(button, pressed);
+        }
+
+        static void process_mouse_move(i32 x, i32 y) {
+            get().process_mouse_move_impl(x, y);
+        }
+
+        KeyboardState get_previous_keyboard_state() const { return m_previous_keyboard_state; }
 
     private:
         InputSystem() = default;
@@ -92,6 +103,11 @@ namespace nk {
 
         void get_mouse_position_impl(i32& out_x, i32& out_y);
         void get_previous_mouse_position_impl(i32& out_x, i32& out_y);
+
+        void update_impl(f64 delta_time);
+        void process_key_impl(KeyCodeFlag keycode, bool pressed);
+        void process_mouse_button_impl(MouseButton button, bool pressed);
+        void process_mouse_move_impl(i32 x, i32 y);
 
         KeyboardState m_current_keyboard_state;
         KeyboardState m_previous_keyboard_state;

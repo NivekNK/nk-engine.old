@@ -10,6 +10,6 @@ namespace nk {
         virtual void sleep(u64 ms) = 0;
 
     protected:
-        Platform(str name, const u32 x, const u32 y, const u32 width, const u32 height) {}
+        Platform(str application_name, const u32 x, const u32 y, const u32 width, const u32 height) {}
     };
 }

@@ -5,19 +5,19 @@
 namespace nk {
     bool InputSystem::s_initialized = false;
 
-    void InputSystem::update(f64 delta_time) {
+    void InputSystem::update_impl(f64 delta_time) {
         memcpy(&m_previous_keyboard_state, &m_current_keyboard_state, sizeof(KeyboardState));
         memcpy(&m_previous_mouse_state, &m_current_mouse_state, sizeof(MouseState));
     }
 
-    void InputSystem::process_key(KeyCodeFlag keycode, bool pressed) {
+    void InputSystem::process_key_impl(KeyCodeFlag keycode, bool pressed) {
         if (m_current_keyboard_state.keys[keycode] == pressed)
             return;
 
         m_current_keyboard_state.keys[keycode] = pressed;
     }
 
-    void InputSystem::process_mouse_button(MouseButton button, bool pressed) {
+    void InputSystem::process_mouse_button_impl(MouseButton button, bool pressed) {
         const u8 index = static_cast<u8>(button);
         if (m_current_mouse_state.buttons[index] == pressed)
             return;
@@ -25,7 +25,7 @@ namespace nk {
         m_current_mouse_state.buttons[index] = pressed;
     }
 
-    void InputSystem::process_mouse_move(i32 x, i32 y) {
+    void InputSystem::process_mouse_move_impl(i32 x, i32 y) {
         if (m_current_mouse_state.x == x && m_current_mouse_state.y == y)
             return;
 
