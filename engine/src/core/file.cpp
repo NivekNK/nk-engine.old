@@ -12,7 +12,7 @@ namespace nk {
           m_file{data.file} {
     }
 
-    File* File::open(Allocator* allocator, Path filepath, BitMask<FileMode> mode) {
+    File* File::open(Allocator* allocator, Path filepath, FileModeFlag mode) {
         FileHandle file;
         if (mode & (FileMode::Read | FileMode::Write | FileMode::Binary)) {
             file = fopen(filepath.string().c_str(), "rb+");
@@ -183,7 +183,7 @@ namespace nk {
         return m_open;
     }
 
-    bool File::is_open_as(BitMask<FileMode> mode) {
+    bool File::is_open_as(FileModeFlag mode) {
         return m_open && (m_mode & mode);
     }
 

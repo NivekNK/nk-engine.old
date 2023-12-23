@@ -40,7 +40,7 @@ namespace nk {
             : KeyEvent(keycode, mods) {}
 
         virtual std::string to_string() const override {
-            return std::format("{}: {}", get_name(), static_cast<char>(m_keycode));
+            return std::format("{}: '{}'", get_name(), static_cast<char>(m_keycode));
         }
 
         DefineEventClassType(KeyReleased)

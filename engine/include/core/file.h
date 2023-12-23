@@ -1,25 +1,27 @@
 #pragma once
 
-#include "core/bit_mask.h"
 #include "core/arr.h"
 
 namespace nk {
+    using FileModeFlag = u8;
+    namespace FileMode {
+        enum : FileModeFlag {
+            Read,
+            Write,
+            Binary,
+        };
+    }
+
     class Allocator;
 
     using FileHandle = FILE*;
     using Path = std::filesystem::path;
 
-    DefineEnumBitMask(FileMode, (
-        Read,
-        Write,
-        Binary
-    ));
-
     class File {
     private:
         struct FileData {
             Path filepath;
-            BitMask<FileMode> mode;
+            FileModeFlag mode;
             bool open;
             FileHandle file;
         };
@@ -28,7 +30,7 @@ namespace nk {
         File(const FileData& data);
         inline ~File() { close(); }
 
-        static File* open(Allocator* allocator, Path filepath, BitMask<FileMode> mode);
+        static File* open(Allocator* allocator, Path filepath, FileModeFlag mode);
 
         Arr<char> read_binary(Allocator* allocator, bool auto_close = true);
         Arr<char> read_text(Allocator* allocator, bool auto_close = true);
@@ -44,13 +46,13 @@ namespace nk {
         szt size();
         bool exists();
         bool is_open();
-        bool is_open_as(BitMask<FileMode> mode);
+        bool is_open_as(FileModeFlag mode);
         bool erase();
         void close();
 
     private:
         Path m_filepath;
-        BitMask<FileMode> m_mode;
+        FileModeFlag m_mode;
         bool m_open;
         FileHandle m_file;
     };
