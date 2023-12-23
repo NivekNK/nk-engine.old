@@ -48,6 +48,8 @@ namespace nk {
         void it_advance(Iterator& it);
 
         void clear();
+        void free();
+
         void reserve(u64 new_size);
         u64 size() const { return m_size; }
 
@@ -416,6 +418,11 @@ namespace nk {
         m_size = 0;
         reset_ctrl();
         reset_growth_left();
+    }
+
+    template <typename K, typename V>
+    void HashMap<K, V>::free() {
+        m_allocator->free(m_control_bytes, calculate_size(m_capacity));
     }
 
     template <typename K, typename V>

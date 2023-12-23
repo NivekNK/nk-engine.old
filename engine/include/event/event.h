@@ -10,11 +10,10 @@ namespace nk {
         WindowMoved,
         KeyPressed,
         KeyReleased,
-        KeyTyped,
-        MouseButtonPressed,
-        MouseButtonReleased,
         MouseMoved,
         MouseScrolled,
+        MouseButtonPressed,
+        MouseButtonReleased,
 
         MaxTypes = 255
     };
@@ -44,7 +43,7 @@ namespace nk {
 template <std::derived_from<nk::Event> T, typename CharT>
 struct std::formatter<T, CharT> : std::formatter<std::string> {
     template <typename FormatContext>
-    auto format(T& e, FormatContext& ctx) const {
+    auto format(const T& e, FormatContext& ctx) const {
         return std::formatter<std::string>::format(e.to_string(), ctx);
     }
 };

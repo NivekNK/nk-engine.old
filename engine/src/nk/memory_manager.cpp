@@ -1,15 +1,24 @@
 #include "nkpch.h"
 
-#include "core/dyarr.h"
 #include "nk/memory_manager.h"
 
+#include "core/dyarr.h"
 #include "memory/allocator.h"
 
 namespace nk {
     class DebugMallocAllocator : public Allocator {
     public:
         DebugMallocAllocator() : Allocator(0, nullptr, "DebugMalloc", MemoryType::None) {}
-        virtual ~DebugMallocAllocator() override = default;
+        virtual ~DebugMallocAllocator() override {}
+
+        DebugMallocAllocator(DebugMallocAllocator&& other)
+            : Allocator{std::move(other)} {
+        }
+
+        DebugMallocAllocator& operator=(DebugMallocAllocator&& other) {
+            Allocator::operator=(std::move(other));
+            return *this;
+        }
 
         virtual void* allocate(const szt size, const szt alignment) override {
             return std::malloc(size);
@@ -32,6 +41,7 @@ namespace nk {
     }
 
     MemoryManager::~MemoryManager() {
+        m_allocations.free();
         std::free(m_allocator);
     }
 

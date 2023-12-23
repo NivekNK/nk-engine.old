@@ -2,8 +2,8 @@
 
 #if !defined(NK_RELEASE)
 
-#include "memory/memory_type.h"
-#include "core/hash_map.h"
+    #include "memory/memory_type.h"
+    #include "core/hash_map.h"
 
 namespace nk {
     class Allocator;
@@ -52,16 +52,16 @@ namespace nk {
     };
 }
 
-#define MemoryManagerInit()            ::nk::MemoryManager::init()
-#define MemoryManagerShutdown()        ::nk::MemoryManager::shutdown()
-#define MemoryManagerUpdate(Allocator) ::nk::MemoryManager::get().update(Allocator)
-#define MemoryManagerReport()          ::nk::MemoryManager::get().log_report()
+    #define MemoryManagerInit()                    ::nk::MemoryManager::init()
+    #define MemoryManagerShutdown()                ::nk::MemoryManager::shutdown()
+    #define MemoryManagerUpdate(Allocator)         ::nk::MemoryManager::get().update(Allocator)
+    #define MemoryManagerReport()                  ::nk::MemoryManager::get().log_report()
 
 #else
 
-#define MemoryManagerInit()
-#define MemoryManagerShutdown()
-#define MemoryManagerUpdate(Allocator)
-#define MemoryManagerReport()
+    #define MemoryManagerInit()
+    #define MemoryManagerShutdown()
+    #define MemoryManagerUpdate(Allocator)
+    #define MemoryManagerReport()
 
 #endif

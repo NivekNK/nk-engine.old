@@ -4,6 +4,9 @@
 
 #include "event/event.h"
 
+#define BindFunc(Func) \
+    [this](auto&& arg) { return Func(std::forward<decltype(arg)>(arg)); }
+
 namespace nk {
     class EventDispatcher {
     private:

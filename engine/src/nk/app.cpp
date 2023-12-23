@@ -2,8 +2,10 @@
 
 #include "nk/app.h"
 
-#include "memory/allocator.h"
-#include "nk/system_manager.h"
+#include "memory/malloc_allocator.h"
+#include "system/input.h"
+#include "event/window_event.h"
+#include "event/key_event.h"
 
 #if defined(NK_PLATFORM_WINDOWS)
     #include "platform/platform_win32.h"
@@ -21,9 +23,19 @@ namespace nk {
 
         m_running = true;
 
-        Allocator* allocator = SystemManager::get_system_allocator();
+        m_event_callback = [this](Event& event) {
+            this->on_event(event);
+        };
+
+        m_key_callback = [this](KeyEvent& event) {
+            this->on_key(event);
+        };
+
+        m_event_dispatcher.add_listener<WindowCloseEvent>(BindFunc(App::on_application_close));
+
+        m_allocator = new MallocAllocator("App", MemoryType::Application);
 #if defined(NK_PLATFORM_WINDOWS)
-        m_platform = allocator->construct<PlatformWin32>(
+        m_platform = m_allocator->construct<PlatformWin32>(
             config.name,
             config.start_pos_x,
             config.start_pos_y,
@@ -51,12 +63,34 @@ namespace nk {
                     FatalLog("Window render failed. shutting down!");
                     break;
                 }
+
+                InputSystem::get().update(0.0f);
             }
         }
 
         m_running = false;
 
-        Allocator* allocator = SystemManager::get_system_allocator();
-        allocator->destroy(m_platform);
+        m_allocator->destroy<PlatformWin32>(m_platform);
+        delete m_allocator;
+    }
+
+    void App::on_event(Event& event) {
+        m_event_dispatcher.dispatch<WindowCloseEvent>(event);
+    }
+
+    void App::on_key(KeyEvent& event) {
+        if (event.get_event_type() == EventType::KeyPressed &&
+            event.keycode() == KeyCode::Escape) {
+            WindowCloseEvent window_close;
+            on_event(window_close);
+            return;
+        }
+
+        DebugLog("{}", event);
+    }
+
+    void App::on_application_close(WindowCloseEvent& event) {
+        m_running = false;
+        DebugLog("{}: Closing application!", event);
     }
 }

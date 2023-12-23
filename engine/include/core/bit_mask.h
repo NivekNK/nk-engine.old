@@ -14,6 +14,12 @@ namespace nk {
 
 #define NK_BIT_MASK_CREATE(count, name)        name = 0x1 << count
 
+#define EnableEnumBitMask(Name)             \
+    template <>                             \
+    struct EnableEnumClassBitMask<Name> {   \
+        static constexpr bool value = true; \
+    }
+
 #define DefineEnumBitMask(Name, Values)                                                     \
     enum class Name {                                                                       \
         None = 0,                                                                           \

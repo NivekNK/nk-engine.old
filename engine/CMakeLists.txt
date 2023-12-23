@@ -28,9 +28,9 @@ set(SOURCES
     src/memory/malloc_allocator.cpp
 
     src/system/logging.cpp
+    src/system/input.cpp
 
     src/nk/memory_manager.cpp
-    src/nk/system_manager.cpp
     src/nk/app.cpp
     src/nk/app_creator.cpp
     src/nk/window.cpp

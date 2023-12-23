@@ -64,6 +64,12 @@ namespace nk {
     }
 
     Allocator::~Allocator() {
+#if !defined(NK_RELEASE)
+        if (m_allocation_count != 0 || m_used_bytes != 0) {
+            FatalLog("{} Allocator not correctly freed!", m_name);
+            MemoryManagerReport();
+        }
+#endif
         Assert(m_allocation_count == 0 && m_used_bytes == 0);
     }
 }

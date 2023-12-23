@@ -25,14 +25,14 @@ namespace nk {
             return new (allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
         }
 
-        template <typename T>
-        inline void destroy(T* ptr) {
+        template <typename T, typename V>
+        inline void destroy(V* ptr) {
             if (ptr == nullptr) {
                 WarnLog("Trying to destroy nullptr!");
                 return;
             }
 
-            ptr->~T();
+            ptr->~V();
             free(ptr, sizeof(T));
         }
 
