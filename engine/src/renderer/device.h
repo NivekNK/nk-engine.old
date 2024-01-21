@@ -61,10 +61,18 @@ namespace nk {
         Instance& m_instance;
 
         VkSurfaceKHR m_surface;
+
         VkPhysicalDevice m_physical_device;
         PhysicalDeviceQueueFamilyInfo m_queue_family;
         VkPhysicalDeviceProperties m_properties;
         VkPhysicalDeviceFeatures m_features;
         VkPhysicalDeviceMemoryProperties m_memory;
+
+        VkDevice m_logical_device;
+        VkQueue m_graphics_queue;
+        VkQueue m_present_queue;
+        VkQueue m_transfer_queue;
+
+        VkCommandPool m_graphics_command_pool;
     };
 }

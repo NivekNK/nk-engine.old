@@ -13,11 +13,16 @@ namespace nk {
         select_physical_device(&defer);
         create_logical_device();
         create_command_pool();
-        if (m_physical_device == nullptr) ErrorLog("Error");
         TraceLog("nk::Device created.");
     }
 
     Device::~Device() {
+        vkDestroyCommandPool(m_logical_device, m_graphics_command_pool, m_allocator);
+        InfoLog("Vulkan Graphics Command Pool destroyed.");
+
+        vkDestroyDevice(m_logical_device, m_allocator);
+        InfoLog("Vulkan Logical Device destroyed.");
+
         vkDestroySurfaceKHR(m_instance(), m_surface, m_allocator);
         InfoLog("Vulkan Surface destroyed.");
 
@@ -136,9 +141,67 @@ namespace nk {
     }
 
     void Device::create_logical_device() {
+        // NOTE: Do not create additional queues for shared indices.
+        constexpr u32 unique_queue_family_count = 3;
+        u32 unique_queue_families[unique_queue_family_count] = {
+            m_queue_family.graphics_family_index,
+            m_queue_family.present_family_index,
+            m_queue_family.transfer_family_index
+        };
+
+        VkDeviceQueueCreateInfo queue_create_infos[unique_queue_family_count] = {};
+        u32 i = 0;
+        for (const u32 queue_family_index : unique_queue_families) {
+            queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queue_create_infos[i].queueFamilyIndex = queue_family_index;
+            queue_create_infos[i].queueCount = 1;
+
+            // TODO: Enable this for a future enhacement.
+            // if (indices[i] == m_queue_family.graphics_family_index)
+            //    queue_create_infos[i].queueCount = 2;
+
+            queue_create_infos[i].flags = 0;
+            queue_create_infos[i].pNext = nullptr;
+
+            f32 queue_priority = 1.0f;
+            queue_create_infos[i].pQueuePriorities = &queue_priority;
+            ++i;
+        }
+
+        // Request device features.
+        // TODO: should be configurable.
+        VkPhysicalDeviceFeatures device_features = {};
+        device_features.samplerAnisotropy = VK_TRUE; // Request anistrophy
+
+        VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+        device_create_info.queueCreateInfoCount = unique_queue_family_count;
+        device_create_info.pQueueCreateInfos = queue_create_infos;
+        device_create_info.pEnabledFeatures = &device_features;
+        device_create_info.enabledExtensionCount = 1;
+        const char* extension_names = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+        device_create_info.ppEnabledExtensionNames = &extension_names;
+
+        // Deprecated and ignored, so pass nothing.
+        device_create_info.enabledLayerCount = 0;
+        device_create_info.ppEnabledLayerNames = nullptr;
+
+        // Create the device.
+        VulkanCheck(vkCreateDevice(m_physical_device, &device_create_info, m_allocator, &m_logical_device));
+        InfoLog("Vulkan Logical Device created.");
+
+        // Get queues.
+        vkGetDeviceQueue(m_logical_device, m_queue_family.graphics_family_index, 0, &m_graphics_queue);
+        vkGetDeviceQueue(m_logical_device, m_queue_family.present_family_index, 0, &m_present_queue);
+        vkGetDeviceQueue(m_logical_device, m_queue_family.transfer_family_index, 0, &m_transfer_queue);
+        InfoLog("Vulkan queues obtained.");
     }
 
     void Device::create_command_pool() {
+        VkCommandPoolCreateInfo pool_create_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+        pool_create_info.queueFamilyIndex = m_queue_family.graphics_family_index;
+        pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        VulkanCheck(vkCreateCommandPool(m_logical_device, &pool_create_info, m_allocator, &m_graphics_command_pool));
+        InfoLog("Vulkan Graphics Command Pool created.");
     }
 
     void Device::query_swapchain_support(
