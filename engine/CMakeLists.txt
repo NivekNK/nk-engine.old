@@ -14,6 +14,8 @@ elseif (UNIX AND NOT APPLE)
 endif()
 #==================================================
 
+find_package(Vulkan REQUIRED)
+
 add_subdirectory(vendor/tlsf)
 add_subdirectory(vendor/eventpp)
 
@@ -35,6 +37,10 @@ set(SOURCES
     src/nk/app_creator.cpp
     src/nk/clock.cpp
     src/nk/window.cpp
+
+    src/renderer/renderer_backend.cpp
+    src/renderer/instance.cpp
+    src/renderer/device.cpp
 )
 
 if (WIN32)
@@ -57,12 +63,14 @@ PRIVATE
     Threads::Threads
     tlsf
     eventpp::eventpp
+    Vulkan::Vulkan
 )
 
 target_include_directories(${PROJECT_NAME}
 PRIVATE
     # where the library itself will look for its internal headers
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${Vulkan_INCLUDE_DIR}
 PUBLIC
     # where top-level project will look for the library's public headers
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

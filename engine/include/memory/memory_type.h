@@ -6,6 +6,7 @@ namespace nk {
 
         Editor,
         Application,
+        Renderer,
 
         MaxTypes,
     };

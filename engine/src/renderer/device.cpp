@@ -1,0 +1,308 @@
+#include "nkpch.h"
+
+#include "renderer/device.h"
+
+namespace nk {
+    Device::Device(Platform& platform, Instance& instance, VkAllocationCallbacks* allocator)
+        : m_instance{instance},
+          m_allocator{allocator} {
+        m_surface = platform.create_surface(instance, allocator);
+        InfoLog("Vulkan surface created.");
+
+        MallocAllocator defer{"Defer", MemoryType::None};
+        select_physical_device(&defer);
+        create_logical_device();
+        create_command_pool();
+        if (m_physical_device == nullptr) ErrorLog("Error");
+        TraceLog("nk::Device created.");
+    }
+
+    Device::~Device() {
+        vkDestroySurfaceKHR(m_instance(), m_surface, m_allocator);
+        InfoLog("Vulkan Surface destroyed.");
+
+        TraceLog("nk::Device destroyed.");
+    }
+
+    void Device::select_physical_device(Allocator* allocator) {
+        u32 physical_device_count = 0;
+        VulkanCheck(vkEnumeratePhysicalDevices(m_instance(), &physical_device_count, 0));
+        if (physical_device_count == 0) {
+            FatalLog("No devices which support Vulkan were found.");
+            return;
+        }
+        VkPhysicalDevice* physical_devices = allocator->allocate<VkPhysicalDevice>(physical_device_count);
+        VulkanCheck(vkEnumeratePhysicalDevices(m_instance(), &physical_device_count, physical_devices));
+
+        // TODO: These requirements should probably be driven by engine
+        // configuration.
+        auto requirements = PhysicalDeviceRequirements{
+            .graphics = true,
+            .present = true,
+            .transfer = true,
+            // NOTE: Enable this if compute will be required.
+            // .compute = true;
+            .sampler_anisotropy = true,
+            .discrete_gpu = true,
+            .extensions = {allocator, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}};
+
+        for (i32 i = 0; i < physical_device_count; i++) {
+            VkPhysicalDeviceProperties properties;
+            vkGetPhysicalDeviceProperties(physical_devices[i], &properties);
+
+            VkPhysicalDeviceFeatures features;
+            vkGetPhysicalDeviceFeatures(physical_devices[i], &features);
+
+            VkPhysicalDeviceMemoryProperties memory;
+            vkGetPhysicalDeviceMemoryProperties(physical_devices[i], &memory);
+
+            auto queue_family = PhysicalDeviceQueueFamilyInfo{};
+            bool meet_requirements = physical_device_meets_requirements(
+                &queue_family,
+                physical_devices[i],
+                properties,
+                features,
+                requirements,
+                allocator);
+
+            if (!meet_requirements) {
+                continue;
+            }
+
+#if defined(NK_DEBUG)
+            DebugLog("Selected device: '{}'.", properties.deviceName);
+            // GPU type, etc.
+            switch (properties.deviceType) {
+                default:
+                case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+                    DebugLog("GPU type is Unknown.");
+                    break;
+                case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+                    DebugLog("GPU type is Integrated.");
+                    break;
+                case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+                    DebugLog("GPU type is Discrete.");
+                    break;
+                case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+                    DebugLog("GPU type is Virtual.");
+                    break;
+                case VK_PHYSICAL_DEVICE_TYPE_CPU:
+                    DebugLog("GPU type is CPU.");
+                    break;
+            }
+
+            DebugLog(
+                "GPU Driver version: {}.{}.{}.",
+                VK_VERSION_MAJOR(properties.driverVersion),
+                VK_VERSION_MINOR(properties.driverVersion),
+                VK_VERSION_PATCH(properties.driverVersion));
+
+            // Vulkan API version.
+            DebugLog(
+                "Vulkan API version: {}.{}.{}.",
+                VK_VERSION_MAJOR(properties.apiVersion),
+                VK_VERSION_MINOR(properties.apiVersion),
+                VK_VERSION_PATCH(properties.apiVersion));
+
+            // Memory information
+            for (u32 i = 0; i < memory.memoryHeapCount; ++i) {
+                const f32 memory_size_gib = static_cast<f32>(memory.memoryHeaps[i].size) / 1024.0f / 1024.0f / 1024.0f;
+                if (memory.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+                    DebugLog("[Memory Heap {}] Local GPU memory: {:.2f} GiB.", i, memory_size_gib);
+                } else {
+                    DebugLog("[Memory Heap {}] Shared System memory: {:.2f} GiB.", i, memory_size_gib);
+                }
+            }
+#endif
+
+            m_physical_device = physical_devices[i];
+            m_queue_family = queue_family;
+
+            // Keep a copy of properties, features and memory info for later use.
+            m_properties = properties;
+            m_features = features;
+            m_memory = memory;
+        }
+        requirements.extensions.clear();
+        allocator->free(physical_devices, sizeof(VkPhysicalDevice) * physical_device_count);
+
+        // Ensure a device was selected
+        if (!m_physical_device) {
+            ErrorLog("No physical devices were found which meet the requirements.");
+            return;
+        }
+
+        InfoLog("Physical device selected.");
+    }
+
+    void Device::create_logical_device() {
+    }
+
+    void Device::create_command_pool() {
+    }
+
+    void Device::query_swapchain_support(
+        SwapchainSupportInfo* out_support_info,
+        VkPhysicalDevice physical_device,
+        Allocator* allocator) const {
+        // Surface capabilities
+        VulkanCheck(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, m_surface, &out_support_info->capabilities));
+
+        // Surface formats
+        u32 format_count = 0;
+        VulkanCheck(vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, m_surface, &format_count, nullptr));
+        if (format_count != 0) {
+            VkSurfaceFormatKHR* formats = allocator->allocate<VkSurfaceFormatKHR>(format_count);
+            out_support_info->formats.init(formats, format_count);
+            VulkanCheck(vkGetPhysicalDeviceSurfaceFormatsKHR(
+                physical_device,
+                m_surface,
+                &format_count,
+                out_support_info->formats.data()));
+        }
+
+        // Present modes
+        u32 present_mode_count = 0;
+        VulkanCheck(vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, m_surface, &present_mode_count, nullptr));
+        if (present_mode_count != 0) {
+            VkPresentModeKHR* present_modes = allocator->allocate<VkPresentModeKHR>(present_mode_count);
+            out_support_info->present_modes.init(present_modes, present_mode_count);
+            VulkanCheck(vkGetPhysicalDeviceSurfacePresentModesKHR(
+                physical_device,
+                m_surface,
+                &present_mode_count,
+                out_support_info->present_modes.data()));
+        }
+    }
+
+    bool Device::physical_device_meets_requirements(
+        PhysicalDeviceQueueFamilyInfo* out_queue_family,
+        VkPhysicalDevice physical_device,
+        const VkPhysicalDeviceProperties& properties,
+        const VkPhysicalDeviceFeatures& features,
+        const PhysicalDeviceRequirements& requirements,
+        Allocator* allocator) const {
+        // Evaluate device properties to determine if it meets the needs of our application.
+        out_queue_family->graphics_family_index = -1;
+        out_queue_family->present_family_index = -1;
+        out_queue_family->compute_family_index = -1;
+        out_queue_family->transfer_family_index = -1;
+
+        // Check if discrete GPU
+        if (requirements.discrete_gpu) {
+            if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+                DebugLog("Device {} is not a discrete GPU, and one is required. Skipping.", properties.deviceName);
+                return false;
+            }
+        }
+
+        // Sampler anisotropy
+        if (requirements.sampler_anisotropy && !features.samplerAnisotropy) {
+            DebugLog("Device {} does not support samplerAnisotropy, skipping.", properties.deviceName);
+            return false;
+        }
+
+        u32 queue_family_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
+        VkQueueFamilyProperties* queue_families = allocator->allocate<VkQueueFamilyProperties>(queue_family_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families);
+
+        // Look at each queue and see what queues it supports
+        u8 min_transfer_score = 255;
+        for (u32 i = 0; i < queue_family_count; i++) {
+            u8 current_transfer_score = 0;
+
+            // Graphics queue
+            if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                out_queue_family->graphics_family_index = i;
+                current_transfer_score++;
+            }
+
+            // Compute queue
+            if (queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+                out_queue_family->compute_family_index = i;
+                current_transfer_score++;
+            }
+
+            // Transfer queue
+            if (queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+                // Take the index if it is the current lowest. This increases the
+                // liklihood that it is a dedicated transfer queue.
+                if (current_transfer_score <= min_transfer_score) {
+                    min_transfer_score = current_transfer_score;
+                    out_queue_family->transfer_family_index = i;
+                }
+            }
+
+            // Present queue
+            VkBool32 supports_present = VK_FALSE;
+            VulkanCheck(vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, m_surface, &supports_present));
+            if (supports_present) {
+                out_queue_family->present_family_index = i;
+            }
+        }
+        allocator->free(queue_families, sizeof(VkQueueFamilyProperties) * queue_family_count);
+
+        // Print out some info about the device
+        DebugLog("\n{:>12} | {:>12} | {:>12} | {:>12} | {:>12}\n{:>12} | {:>12} | {:>12} | {:>12} | {:>12}",
+                 "Graphics", "Present", "Compute", "Transfer", "Name",
+                 out_queue_family->graphics_family_index != -1,
+                 out_queue_family->present_family_index != -1,
+                 out_queue_family->compute_family_index != -1,
+                 out_queue_family->transfer_family_index != -1,
+                 properties.deviceName);
+
+        if ((requirements.graphics && out_queue_family->graphics_family_index == -1) ||
+            (requirements.present && out_queue_family->present_family_index == -1) ||
+            (requirements.compute && out_queue_family->compute_family_index == -1) ||
+            (requirements.transfer && out_queue_family->transfer_family_index == -1)) {
+            return false;
+        }
+
+        DebugLog("Device meets queue requirements.");
+        DebugLog("Graphics Family Index: {}.", out_queue_family->graphics_family_index);
+        DebugLog("Present Family Index:  {}.", out_queue_family->present_family_index);
+        DebugLog("Transfer Family Index: {}.", out_queue_family->transfer_family_index);
+        DebugLog("Compute Family Index:  {}.", out_queue_family->compute_family_index);
+
+        SwapchainSupportInfo swapchain_support_info = {};
+        query_swapchain_support(&swapchain_support_info, physical_device, allocator);
+        if (swapchain_support_info.formats.empty() || swapchain_support_info.present_modes.empty()) {
+            swapchain_support_info.formats.free(allocator);
+            swapchain_support_info.present_modes.free(allocator);
+            DebugLog("Required swapchain support not present, skipping device {}.", properties.deviceName);
+            return false;
+        }
+
+        u32 available_extension_count = 0;
+        VulkanCheck(vkEnumerateDeviceExtensionProperties(
+            physical_device, nullptr, &available_extension_count, nullptr));
+
+        VkExtensionProperties* available_extensions_properties
+            = allocator->allocate<VkExtensionProperties>(available_extension_count);
+        VulkanCheck(vkEnumerateDeviceExtensionProperties(
+            physical_device, nullptr, &available_extension_count, available_extensions_properties));
+
+        for (const auto& required_extension : requirements.extensions) {
+            bool found_extension = false;
+
+            for (u32 i = 0; i < available_extension_count; i++) {
+                if (strcmp(available_extensions_properties[i].extensionName, required_extension) == 0) {
+                    found_extension = true;
+                    break;
+                }
+            }
+
+            if (!found_extension) {
+                DebugLog("Required extension not found: '{}', skipping device {}.", required_extension, properties.deviceName);
+                allocator->free(available_extensions_properties, sizeof(VkExtensionProperties) * available_extension_count);
+                return false;
+            }
+        }
+        allocator->free(available_extensions_properties, sizeof(VkExtensionProperties) * available_extension_count);
+        swapchain_support_info.formats.free(allocator);
+        swapchain_support_info.present_modes.free(allocator);
+
+        return true;
+    }
+}

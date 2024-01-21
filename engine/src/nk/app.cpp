@@ -6,6 +6,7 @@
 #include "nk/clock.h"
 #include "system/input.h"
 #include "event/window_event.h"
+#include "renderer/renderer_backend.h"
 
 #if defined(NK_PLATFORM_WINDOWS)
     #include "platform/platform_win32.h"
@@ -47,6 +48,11 @@ namespace nk {
                     break;
                 }
 
+                RenderPacket render_packet {
+                    .delta_time = delta_time,
+                };
+                m_renderer->draw_frame(render_packet);
+
                 f64 frame_end_time = m_platform->get_absolute_time();
                 f64 frame_elapsed_time = frame_end_time - frame_start_time;
                 running_time += frame_elapsed_time;
@@ -67,9 +73,17 @@ namespace nk {
             }
         }
 
+        m_allocator->destroy<RendererBackend>(m_renderer);
+        InfoLog("nk::Renderer destroyed.");
         m_allocator->destroy<Clock>(m_clock);
+        InfoLog("nk::Clock destroyed.");
+#if defined(NK_PLATFORM_WINDOWS)
         m_allocator->destroy<PlatformWin32>(m_platform);
+#elif defined(NK_PLATFORM_LINUX)
+#endif
+        InfoLog("nk::Platform destroyed.");
         delete m_allocator;
+        TraceLog("nk::App destroyed.");
     }
 
     void App::close() {
@@ -102,6 +116,12 @@ namespace nk {
 #elif defined(NK_PLATFORM_LINUX)
         #error Not implemented yet!
 #endif
+        InfoLog("nk::Platform created.");
         m_clock = m_allocator->construct<Clock>(*m_platform);
+        InfoLog("nk::Clock created.");
+        m_renderer = m_allocator->construct<RendererBackend>(config.name, m_window, *m_platform);
+        InfoLog("nk::Renderer created.");
+
+        TraceLog("nk::App created.");
     }
 }

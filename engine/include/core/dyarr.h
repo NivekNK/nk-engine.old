@@ -8,6 +8,31 @@ namespace nk {
     public:
         static_assert(!std::is_const_v<T>, "T must not be const");
 
+        Dyarr()
+            : m_data{nullptr},
+              m_length{0},
+              m_capacity{0},
+              m_allocator{nullptr} {}
+
+        void init(Allocator* allocator, const u64 initial_capacity, const u64 initial_length = 0) {
+            m_data = nullptr;
+            m_length = initial_length;
+            m_capacity = 0;
+            m_allocator = allocator;
+            if (initial_capacity > 0)
+                grow(initial_capacity);
+        }
+
+        void init(Allocator* allocator, std::initializer_list<T> data) {
+            m_data = nullptr;
+            m_length = data.size();
+            m_capacity = 0;
+            m_allocator = allocator;
+            if (data.size() > 0)
+                grow(data.size());
+            std::copy(data.begin(), data.end(), m_data);
+        }
+
         Dyarr(Allocator* allocator, const u64 initial_capacity, const u64 initial_length = 0)
             : m_data{nullptr},
               m_length{initial_length},
@@ -67,6 +92,7 @@ namespace nk {
 
         u64 length() const;
         u64 capacity() const;
+        bool empty() const;
 
         T* data();
 
@@ -108,6 +134,8 @@ namespace nk {
 
         Iterator begin() { return Iterator{&m_data[0]}; }
         Iterator end() { return Iterator{&m_data[m_length]}; }
+        Iterator begin() const { return Iterator{&m_data[0]}; }
+        Iterator end() const { return Iterator{&m_data[m_length]}; }
 
     private:
         T* m_data = nullptr;
@@ -303,6 +331,11 @@ namespace nk {
     template <typename T>
     inline u64 Dyarr<T>::capacity() const {
         return m_capacity;
+    }
+
+    template <typename T>
+    inline bool Dyarr<T>::empty() const {
+        return m_length == 0;
     }
 
     template <typename T>

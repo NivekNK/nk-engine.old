@@ -103,6 +103,8 @@ namespace nk {
                 return "Editor";
             case MemoryType::Application:
                 return "Application";
+            case MemoryType::Renderer:
+                return "Renderer";
             case MemoryType::MaxTypes:
                 return "Invalid";
             default:

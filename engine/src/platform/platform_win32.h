@@ -13,6 +13,9 @@ namespace nk {
         virtual f64 get_absolute_time() override;
         virtual void sleep(u64 ms) override;
 
+        virtual void get_required_extensions(Dyarr<cstr>& extensions) const override;
+        virtual VkSurfaceKHR create_surface(Instance& instance, VkAllocationCallbacks* allocator) const override;;
+
     private:
         HINSTANCE m_hinstance;
         HWND m_hwnd;

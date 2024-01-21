@@ -12,6 +12,19 @@ namespace nk {
     template <typename T>
     class Arr {
     public:
+        Arr() : m_data{nullptr}, m_length{0} {}
+
+        void init(T* data, const u64 length) {
+            m_data = data;
+            m_length = length;
+        }
+
+        template <IDyarr<T> D>
+        void init(D& dyarr) {
+            m_data = dyarr.data();
+            m_length = dyarr.length();
+        }
+
         Arr(T* data, const u64 length)
             : m_data{data}, m_length{length} {
         }
@@ -32,6 +45,7 @@ namespace nk {
         }
 
         u64 length() const { return m_length; }
+        bool empty() const { return m_length == 0; }
         T* data() { return m_data; }
         void free(Allocator* allocator) { allocator->free(m_data, m_length * sizeof(T)); }
 
@@ -73,6 +87,8 @@ namespace nk {
 
         Iterator begin() { return Iterator{&m_data[0]}; }
         Iterator end() { return Iterator{&m_data[m_length]}; }
+        Iterator begin() const { return Iterator{&m_data[0]}; }
+        Iterator end() const { return Iterator{&m_data[m_length]}; }
 
     private:
         T* m_data = nullptr;

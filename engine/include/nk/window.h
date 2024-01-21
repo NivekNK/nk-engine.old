@@ -10,7 +10,7 @@ namespace nk {
     class Window {
     public:
         Window(const ApplicationConfig& config);
-        ~Window() = default;
+        ~Window();
 
         bool update(f32 delta_time);
         bool render(f32 delta_time);

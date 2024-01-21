@@ -7,6 +7,11 @@
 #include "event/key_event.h"
 #include "event/mouse_event.h"
 #include "system/input.h"
+#include "renderer/instance.h"
+
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_win32.h>
+
 
 namespace nk {
     f64 PlatformWin32::s_clock_frequency = 0;
@@ -125,6 +130,25 @@ namespace nk {
 
     void PlatformWin32::sleep(u64 ms) {
         Sleep(ms);
+    }
+
+    void PlatformWin32::get_required_extensions(Dyarr<cstr>& extensions) const {
+        extensions.push("VK_KHR_win32_surface");
+    }
+
+    VkSurfaceKHR PlatformWin32::create_surface(Instance& instance, VkAllocationCallbacks* allocator) const {
+        VkWin32SurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
+        create_info.hinstance = m_hinstance;
+        create_info.hwnd = m_hwnd;
+
+        VkSurfaceKHR surface;
+        VkResult result = vkCreateWin32SurfaceKHR(instance(), &create_info, allocator, &surface);
+        if (result != VK_SUCCESS) {
+            FatalLog("Vulkan surface creation failed.");
+            return nullptr;
+        }
+
+        return surface;
     }
 
     LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM wparam, LPARAM lparam) {

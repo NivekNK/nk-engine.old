@@ -6,6 +6,7 @@ namespace nk {
     class Allocator;
     class Platform;
     class Clock;
+    class Renderer;
 
     struct ApplicationConfig {
         str name;
@@ -37,6 +38,7 @@ namespace nk {
 
         Allocator* m_allocator;
         Platform* m_platform;
+        Renderer* m_renderer;
 
     private:
         static App* s_instance;

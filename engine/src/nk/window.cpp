@@ -18,6 +18,9 @@ namespace nk {
         m_event_dispatcher.add_listener<WindowCloseEvent>(BindFunc(Window::on_window_close));
     }
 
+    Window::~Window() {
+    }
+
     bool Window::update(f32 delta_time) {
         return true;
     }
