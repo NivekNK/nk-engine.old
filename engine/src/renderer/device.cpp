@@ -6,11 +6,14 @@ namespace nk {
     Device::Device(Platform& platform, Instance& instance, VkAllocationCallbacks* allocator)
         : m_instance{instance},
           m_allocator{allocator} {
+        m_swapchain_support_info_allocator = new MallocAllocator("SwapchainSupportInfo", MemoryType::Renderer);
+
         m_surface = platform.create_surface(instance, allocator);
         InfoLog("Vulkan surface created.");
 
-        MallocAllocator defer{"Defer", MemoryType::None};
+        MallocAllocator defer{"Defer", MemoryType::Defer};
         select_physical_device(&defer);
+        detect_depth_format();
         create_logical_device();
         create_command_pool();
         TraceLog("nk::Device created.");
@@ -23,20 +26,41 @@ namespace nk {
         vkDestroyDevice(m_logical_device, m_allocator);
         InfoLog("Vulkan Logical Device destroyed.");
 
+        m_swapchain_support_info.formats.free(m_swapchain_support_info_allocator);
+        m_swapchain_support_info.present_modes.free(m_swapchain_support_info_allocator);
+        delete m_swapchain_support_info_allocator;
+
         vkDestroySurfaceKHR(m_instance(), m_surface, m_allocator);
         InfoLog("Vulkan Surface destroyed.");
 
         TraceLog("nk::Device destroyed.");
     }
 
-    void Device::select_physical_device(Allocator* allocator) {
+    bool Device::find_memory_index(u32& out_memory_index, const u32 type_filter, VkMemoryPropertyFlags property_flags) const {
+        VkPhysicalDeviceMemoryProperties memory_properties;
+        vkGetPhysicalDeviceMemoryProperties(m_physical_device, &memory_properties);
+
+        for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
+            // Check each memory type to see if its bit is set to 1.
+            if (type_filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & property_flags) == property_flags) {
+                out_memory_index = i;
+                return true;
+            }
+        }
+
+        WarnLog("Unable to find suitable memory type!");
+        out_memory_index = u32_max;
+        return false;
+    }
+
+    void Device::select_physical_device(Allocator* defer) {
         u32 physical_device_count = 0;
         VulkanCheck(vkEnumeratePhysicalDevices(m_instance(), &physical_device_count, 0));
         if (physical_device_count == 0) {
             FatalLog("No devices which support Vulkan were found.");
             return;
         }
-        VkPhysicalDevice* physical_devices = allocator->allocate<VkPhysicalDevice>(physical_device_count);
+        VkPhysicalDevice* physical_devices = defer->allocate<VkPhysicalDevice>(physical_device_count);
         VulkanCheck(vkEnumeratePhysicalDevices(m_instance(), &physical_device_count, physical_devices));
 
         // TODO: These requirements should probably be driven by engine
@@ -49,7 +73,7 @@ namespace nk {
             // .compute = true;
             .sampler_anisotropy = true,
             .discrete_gpu = true,
-            .extensions = {allocator, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}};
+            .extensions = {defer, {VK_KHR_SWAPCHAIN_EXTENSION_NAME}}};
 
         for (i32 i = 0; i < physical_device_count; i++) {
             VkPhysicalDeviceProperties properties;
@@ -68,7 +92,7 @@ namespace nk {
                 properties,
                 features,
                 requirements,
-                allocator);
+                defer);
 
             if (!meet_requirements) {
                 continue;
@@ -129,7 +153,7 @@ namespace nk {
             m_memory = memory;
         }
         requirements.extensions.clear();
-        allocator->free(physical_devices, sizeof(VkPhysicalDevice) * physical_device_count);
+        defer->free(physical_devices, sizeof(VkPhysicalDevice) * physical_device_count);
 
         // Ensure a device was selected
         if (!m_physical_device) {
@@ -138,6 +162,35 @@ namespace nk {
         }
 
         InfoLog("Physical device selected.");
+    }
+
+    void Device::detect_depth_format() {
+        // Format candidates
+        constexpr u64 candidate_count = 3;
+        VkFormat candidates[candidate_count] = {
+            VK_FORMAT_D32_SFLOAT,
+            VK_FORMAT_D32_SFLOAT_S8_UINT,
+            VK_FORMAT_D24_UNORM_S8_UINT
+        };
+
+        u32 flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        for (u64 i = 0; i < candidate_count; ++i) {
+            VkFormatProperties properties;
+            vkGetPhysicalDeviceFormatProperties(m_physical_device, candidates[i], &properties);
+
+            if ((properties.linearTilingFeatures & flags) == flags) {
+                m_depth_format = candidates[i];
+                InfoLog("Depth format detected.");
+                return;
+            } else if ((properties.optimalTilingFeatures & flags) == flags) {
+                m_depth_format = candidates[i];
+                InfoLog("Depth format detected.");
+                return;
+            }
+        }
+
+        m_depth_format = VK_FORMAT_UNDEFINED;
+        WarnLog("Depth format not detected.");
     }
 
     void Device::create_logical_device() {
@@ -204,37 +257,34 @@ namespace nk {
         InfoLog("Vulkan Graphics Command Pool created.");
     }
 
-    void Device::query_swapchain_support(
-        SwapchainSupportInfo* out_support_info,
-        VkPhysicalDevice physical_device,
-        Allocator* allocator) const {
+    void Device::query_swapchain_support(VkPhysicalDevice physical_device) {
         // Surface capabilities
-        VulkanCheck(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, m_surface, &out_support_info->capabilities));
+        VulkanCheck(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, m_surface, &m_swapchain_support_info.capabilities));
 
         // Surface formats
         u32 format_count = 0;
         VulkanCheck(vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, m_surface, &format_count, nullptr));
         if (format_count != 0) {
-            VkSurfaceFormatKHR* formats = allocator->allocate<VkSurfaceFormatKHR>(format_count);
-            out_support_info->formats.init(formats, format_count);
+            VkSurfaceFormatKHR* formats = m_swapchain_support_info_allocator->allocate<VkSurfaceFormatKHR>(format_count);
+            m_swapchain_support_info.formats.init(formats, format_count);
             VulkanCheck(vkGetPhysicalDeviceSurfaceFormatsKHR(
                 physical_device,
                 m_surface,
                 &format_count,
-                out_support_info->formats.data()));
+                m_swapchain_support_info.formats.data()));
         }
 
         // Present modes
         u32 present_mode_count = 0;
         VulkanCheck(vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, m_surface, &present_mode_count, nullptr));
         if (present_mode_count != 0) {
-            VkPresentModeKHR* present_modes = allocator->allocate<VkPresentModeKHR>(present_mode_count);
-            out_support_info->present_modes.init(present_modes, present_mode_count);
+            VkPresentModeKHR* present_modes = m_swapchain_support_info_allocator->allocate<VkPresentModeKHR>(present_mode_count);
+            m_swapchain_support_info.present_modes.init(present_modes, present_mode_count);
             VulkanCheck(vkGetPhysicalDeviceSurfacePresentModesKHR(
                 physical_device,
                 m_surface,
                 &present_mode_count,
-                out_support_info->present_modes.data()));
+                m_swapchain_support_info.present_modes.data()));
         }
     }
 
@@ -244,7 +294,7 @@ namespace nk {
         const VkPhysicalDeviceProperties& properties,
         const VkPhysicalDeviceFeatures& features,
         const PhysicalDeviceRequirements& requirements,
-        Allocator* allocator) const {
+        Allocator* defer) {
         // Evaluate device properties to determine if it meets the needs of our application.
         out_queue_family->graphics_family_index = -1;
         out_queue_family->present_family_index = -1;
@@ -267,7 +317,7 @@ namespace nk {
 
         u32 queue_family_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
-        VkQueueFamilyProperties* queue_families = allocator->allocate<VkQueueFamilyProperties>(queue_family_count);
+        VkQueueFamilyProperties* queue_families = defer->allocate<VkQueueFamilyProperties>(queue_family_count);
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families);
 
         // Look at each queue and see what queues it supports
@@ -304,10 +354,10 @@ namespace nk {
                 out_queue_family->present_family_index = i;
             }
         }
-        allocator->free(queue_families, sizeof(VkQueueFamilyProperties) * queue_family_count);
+        defer->free(queue_families, sizeof(VkQueueFamilyProperties) * queue_family_count);
 
         // Print out some info about the device
-        DebugLog("\n{:>12} | {:>12} | {:>12} | {:>12} | {:>12}\n{:>12} | {:>12} | {:>12} | {:>12} | {:>12}",
+        DebugLog("Device selected:\n{:>12} | {:>12} | {:>12} | {:>12} | {:>12}\n{:>12} | {:>12} | {:>12} | {:>12} | {:>12}",
                  "Graphics", "Present", "Compute", "Transfer", "Name",
                  out_queue_family->graphics_family_index != -1,
                  out_queue_family->present_family_index != -1,
@@ -328,11 +378,10 @@ namespace nk {
         DebugLog("Transfer Family Index: {}.", out_queue_family->transfer_family_index);
         DebugLog("Compute Family Index:  {}.", out_queue_family->compute_family_index);
 
-        SwapchainSupportInfo swapchain_support_info = {};
-        query_swapchain_support(&swapchain_support_info, physical_device, allocator);
-        if (swapchain_support_info.formats.empty() || swapchain_support_info.present_modes.empty()) {
-            swapchain_support_info.formats.free(allocator);
-            swapchain_support_info.present_modes.free(allocator);
+        query_swapchain_support(physical_device);
+        if (m_swapchain_support_info.formats.empty() || m_swapchain_support_info.present_modes.empty()) {
+            m_swapchain_support_info.formats.free(m_swapchain_support_info_allocator);
+            m_swapchain_support_info.present_modes.free(m_swapchain_support_info_allocator);
             DebugLog("Required swapchain support not present, skipping device {}.", properties.deviceName);
             return false;
         }
@@ -342,7 +391,7 @@ namespace nk {
             physical_device, nullptr, &available_extension_count, nullptr));
 
         VkExtensionProperties* available_extensions_properties
-            = allocator->allocate<VkExtensionProperties>(available_extension_count);
+            = defer->allocate<VkExtensionProperties>(available_extension_count);
         VulkanCheck(vkEnumerateDeviceExtensionProperties(
             physical_device, nullptr, &available_extension_count, available_extensions_properties));
 
@@ -358,13 +407,13 @@ namespace nk {
 
             if (!found_extension) {
                 DebugLog("Required extension not found: '{}', skipping device {}.", required_extension, properties.deviceName);
-                allocator->free(available_extensions_properties, sizeof(VkExtensionProperties) * available_extension_count);
+                defer->free(available_extensions_properties, sizeof(VkExtensionProperties) * available_extension_count);
+                m_swapchain_support_info.formats.free(m_swapchain_support_info_allocator);
+                m_swapchain_support_info.present_modes.free(m_swapchain_support_info_allocator);
                 return false;
             }
         }
-        allocator->free(available_extensions_properties, sizeof(VkExtensionProperties) * available_extension_count);
-        swapchain_support_info.formats.free(allocator);
-        swapchain_support_info.present_modes.free(allocator);
+        defer->free(available_extensions_properties, sizeof(VkExtensionProperties) * available_extension_count);
 
         return true;
     }

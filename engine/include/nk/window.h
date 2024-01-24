@@ -20,6 +20,8 @@ namespace nk {
 
         inline bool is_suspended() const { return m_suspended; }
         inline bool is_running() const { return m_running; }
+        inline u16 get_width() const { return m_width; }
+        inline u16 get_height() const { return m_height; }
 
     private:
         void on_window_close(WindowCloseEvent& event);

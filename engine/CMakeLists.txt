@@ -41,6 +41,10 @@ set(SOURCES
     src/renderer/renderer_backend.cpp
     src/renderer/instance.cpp
     src/renderer/device.cpp
+    src/renderer/image.cpp
+    src/renderer/framebuffer.cpp
+    src/renderer/swapchain.cpp
+    src/renderer/render_pass.cpp
 )
 
 if (WIN32)

@@ -39,15 +39,26 @@ namespace nk {
         Device(const Device&) = delete;
         Device& operator=(const Device&) = delete;
 
+        inline VkDevice operator()() { return m_logical_device; }
+        inline VkDevice get() { return m_logical_device; }
+
+        const SwapchainSupportInfo& get_swapchain_support_info() const { return m_swapchain_support_info; }
+        VkSurfaceKHR get_surface() { return m_surface; }
+        const PhysicalDeviceQueueFamilyInfo& get_queue_family_info() const { return m_queue_family; }
+        const VkFormat get_depth_format() const { return m_depth_format; }
+
+        bool find_memory_index(
+            u32& out_memory_index,
+            const u32 type_filter,
+            VkMemoryPropertyFlags property_flags) const;
+
     private:
-        void select_physical_device(Allocator* allocator);
+        void select_physical_device(Allocator* defer);
+        void detect_depth_format();
         void create_logical_device();
         void create_command_pool();
 
-        void query_swapchain_support(
-            SwapchainSupportInfo* out_support_info,
-            VkPhysicalDevice physical_device,
-            Allocator* allocator) const;
+        void query_swapchain_support(VkPhysicalDevice physical_device);
 
         bool physical_device_meets_requirements(
             PhysicalDeviceQueueFamilyInfo* out_queue_family,
@@ -55,7 +66,7 @@ namespace nk {
             const VkPhysicalDeviceProperties& properties,
             const VkPhysicalDeviceFeatures& features,
             const PhysicalDeviceRequirements& requirementst,
-            Allocator* allocator) const;
+            Allocator* defer);
 
         VkAllocationCallbacks* m_allocator;
         Instance& m_instance;
@@ -74,5 +85,10 @@ namespace nk {
         VkQueue m_transfer_queue;
 
         VkCommandPool m_graphics_command_pool;
+
+        Allocator* m_swapchain_support_info_allocator;
+        SwapchainSupportInfo m_swapchain_support_info;
+
+        VkFormat m_depth_format;
     };
 }

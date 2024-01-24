@@ -7,6 +7,7 @@ namespace nk {
         Editor,
         Application,
         Renderer,
+        Defer,
 
         MaxTypes,
     };

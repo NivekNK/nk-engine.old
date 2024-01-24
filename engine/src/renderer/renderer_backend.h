@@ -5,6 +5,8 @@
 #include "platform/platform.h"
 #include "renderer/instance.h"
 #include "renderer/device.h"
+#include "renderer/swapchain.h"
+#include "renderer/render_pass.h"
 
 namespace nk {
     class Window;
@@ -28,5 +30,7 @@ namespace nk {
         Allocator* m_allocator;
         Instance* m_instance;
         Device* m_device;
+        Swapchain* m_swapchain;
+        RenderPass* m_main_render_pass;
     };
 }

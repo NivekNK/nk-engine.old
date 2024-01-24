@@ -33,4 +33,7 @@ namespace nk {
 #define MiB(Value) Value * 1024 * 1024
 #define KiB(Value) Value * 1024
 
+#define MinAB(a, b) (((a) < (b)) ? (a) : (b))
+#define MaxAB(a, b) (((a) > (b)) ? (a) : (b))
+
 #define api __declspec(dllexport)

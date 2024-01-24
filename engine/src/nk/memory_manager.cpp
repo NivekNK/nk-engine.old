@@ -105,6 +105,8 @@ namespace nk {
                 return "Application";
             case MemoryType::Renderer:
                 return "Renderer";
+            case MemoryType::Defer:
+                return "Defer";
             case MemoryType::MaxTypes:
                 return "Invalid";
             default:
